@@ -1,0 +1,39 @@
+# ---- Python / Django ----
+venv/
+__pycache__/
+*.py[cod]
+*.sqlite3
+*.log
+
+# ---- Django static and media ----
+staticfiles/
+media/
+*.pot
+*.mo
+
+# ---- Environment files ----
+.env
+.env.local
+.env.development
+.env.production
+
+# ---- Mac & system files ----
+.DS_Store
+Thumbs.db
+
+# ---- VSCode / PyCharm ----
+.vscode/
+.idea/
+
+# ---- Node / React ----
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+build/
+dist/
+
+# ---- Coverage / Testing ----
+.coverage
+htmlcov/
+pytest_cache/
