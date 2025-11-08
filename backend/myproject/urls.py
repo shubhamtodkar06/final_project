@@ -21,4 +21,5 @@ from django.urls import path, include  # ✅ add include
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/auth/', include('accounts.urls')),  # ✅ include the accounts app routes
+    path('api/chatbot/', include('chatbot.views')),  # Add chatbot API endpoint(s)
 ]
