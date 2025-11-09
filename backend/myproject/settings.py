@@ -26,9 +26,12 @@ if not GEMINI_API_KEY:
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv("DEBUG", "True") == "True"
+#
+# Debug and Allowed Hosts configuration
+DEBUG = os.getenv("DEBUG", "False") == "True"
 
-ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "127.0.0.1,localhost").split(",")
+# Allow localhost during development and custom domain in production
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "127.0.0.1,localhost,final-project-backend.onrender.com").split(",")
 
 # ----------------------------------------------------------------------
 # Application Definition
