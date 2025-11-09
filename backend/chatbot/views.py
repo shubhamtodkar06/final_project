@@ -1,4 +1,4 @@
-
+#backend/chatbot/views.py
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, permissions
@@ -6,9 +6,6 @@ from .models import Resource
 from .utils import index_resource
 
 class IngestResourceView(APIView):
-    """
-    API endpoint to ingest a resource and index it for RAG.
-    """
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
