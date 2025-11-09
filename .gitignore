@@ -1,31 +1,33 @@
-# ---- Python / Django ----
+# ─── Python / Django ───────────────────────────────────
 venv/
 __pycache__/
 *.py[cod]
 *.sqlite3
 *.log
 
-# ---- Django static and media ----
+# ─── Django static and media ───────────────────────────
 staticfiles/
 media/
 *.pot
 *.mo
 
-# ---- Environment files ----
+# ─── Environment files / Secrets ───────────────────────
 .env
 .env.local
 .env.development
 .env.production
+# Optional: you may include .env.example (safe template) in repo
+# .env.example
 
-# ---- Mac & system files ----
+# ─── Mac & system files ────────────────────────────────
 .DS_Store
 Thumbs.db
 
-# ---- VSCode / PyCharm ----
+# ─── VSCode / PyCharm ─────────────────────────────────
 .vscode/
 .idea/
 
-# ---- Node / React ----
+# ─── Node / React ─────────────────────────────────────
 node_modules/
 npm-debug.log*
 yarn-debug.log*
@@ -33,7 +35,14 @@ yarn-error.log*
 build/
 dist/
 
-# ---- Coverage / Testing ----
+# ─── Coverage / Testing ────────────────────────────────
 .coverage
 htmlcov/
 pytest_cache/
+
+# Ignore Google Cloud credentials
+*.json
+*.env
+
+
+#hope is the way
