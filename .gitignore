@@ -39,3 +39,7 @@ dist/
 .coverage
 htmlcov/
 pytest_cache/
+
+# Ignore Google Cloud credentials
+*.json
+*.env
