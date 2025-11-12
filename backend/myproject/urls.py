@@ -33,6 +33,7 @@ urlpatterns = [
 
     # Parent / Weekly reports
     path('api/reports/', include('reports.urls')),
+    path('api/student_notes/', include('student_notes.urls')),
 
     # Health check (for Render)
     path('healthz/', health_check),

@@ -92,20 +92,30 @@ def build_prompt(mode, query, context_data=""):
         Context:\n{context_data}\n
         Student question: {query}
         """,
+
         "quiz": f"""Generate a short quiz for revision.
         Context:\n{context_data}\n
         Topic: {query}
         Return JSON: {{ "questions": [...], "answers": [...] }}""",
+
         "homework_feedback": f"""Evaluate the student's homework submission.
         Context:\n{context_data}\n
         Homework Text:\n{query}\n
         Provide JSON: {{ "feedback": "...", "score": float }}""",
+
         "report": f"""Summarize student's weekly progress.
         Context:\n{context_data}\n
-        Create JSON with keys: ['summary', 'improvement_tips']"""
+        Create JSON with keys: ['summary', 'improvement_tips']""",
+
+        # ✅ NEW: "note" mode for AI-generated study notes
+        "note": f"""You are an educational tutor generating clear, age-appropriate study notes
+        for school students (Grades 5–12). Use simple explanations, examples, and subheadings.
+        Context:\n{context_data}\n
+        User request:\n{query}\n
+        Format output as structured markdown or paragraphs.
+        """
     }
     return templates.get(mode, query)
-
 
 def ai_generate(student_id, query, mode="chat", subject=None):
     """

@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     'progress',
     'reports',
     'recommendations',
+    'student_notes',
 ]
 
 MIDDLEWARE = [
