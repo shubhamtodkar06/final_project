@@ -1,11 +1,18 @@
-#final_project/backend/chatbot/urls.py
+# backend/chatbot/urls.py
 from django.urls import path
-from . import views
+from .views import (
+    ChatSessionListCreateView,
+    ChatSessionRetrieveDeleteView,
+    ChatMessageListView,
+    ChatbotAPIView
+)
 
 urlpatterns = [
-
     # Session management
-    path('sessions/', views.ChatSessionListCreateView.as_view(), name='chat_sessions'),
-    path('sessions/<uuid:session_id>/', views.ChatSessionRetrieveDeleteView.as_view(), name='chat_session_detail'),
-    path('sessions/<uuid:session_id>/messages/', views.ChatMessageListView.as_view(), name='chat_session_messages'),
+    path('sessions/', ChatSessionListCreateView.as_view(), name='chat_sessions'),
+    path('sessions/<uuid:session_id>/', ChatSessionRetrieveDeleteView.as_view(), name='chat_session_detail'),
+    path('sessions/<uuid:session_id>/messages/', ChatMessageListView.as_view(), name='chat_session_messages'),
+
+    # Chat interaction
+    path('chat/', ChatbotAPIView.as_view(), name='chat'),
 ]

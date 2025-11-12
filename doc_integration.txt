@@ -12,19 +12,19 @@ All API requests (except registration and login) require authentication using JW
 
 | Module           | Endpoint                                      | Method | Purpose/Description                               |
 |------------------|-----------------------------------------------|--------|---------------------------------------------------|
-| Auth             | `/api/accounts/register/`                     | POST   | Register new user                                 |
-| Auth             | `/api/accounts/login/`                        | POST   | Login (get JWT tokens)                            |
-| Auth             | `/api/accounts/profile/`                      | GET    | Get user profile                                  |
-| Auth             | `/api/token/refresh/`                         | POST   | Refresh access token                              |
-| Auth             | `/api/logout/`                                | POST   | Logout (blacklist token)                          |
-| Chat (REST)      | `/api/sessions/`                              | GET    | List chat sessions                                |
-| Chat (REST)      | `/api/sessions/`                              | POST   | Create new chat session                           |
-| Chat (REST)      | `/api/sessions/<session_id>/`                 | GET    | Retrieve chat session                             |
-| Chat (REST)      | `/api/sessions/<session_id>/`                 | DELETE | Delete chat session                               |
-| Chat (REST)      | `/api/sessions/<session_id>/messages/`        | GET    | List all messages in a session                    |
+| Auth             | `/api/auth/register/`                         | POST   | Register new user                                 |
+| Auth             | `/api/auth/login/`                            | POST   | Login (get JWT tokens)                            |
+| Auth             | `/api/auth/profile/`                          | GET    | Get user profile                                  |
+| Auth             | `/api/auth/token/refresh/`                    | POST   | Refresh access token                              |
+| Auth             | `/api/auth/logout/`                           | POST   | Logout (blacklist token)                          |
+| Chat (REST)      | `/api/chatbot/sessions/`                      | GET    | List chat sessions                                |
+| Chat (REST)      | `/api/chatbot/sessions/`                      | POST   | Create new chat session                           |
+| Chat (REST)      | `/api/chatbot/sessions/<session_id>/`         | GET    | Retrieve chat session                             |
+| Chat (REST)      | `/api/chatbot/sessions/<session_id>/`         | DELETE | Delete chat session                               |
+| Chat (REST)      | `/api/chatbot/sessions/<session_id>/messages/`| GET    | List all messages in a session                    |
 | Chat (WebSocket) | `/ws/chat/`                                   | WS     | Real-time chatbot (streaming, TTS, status, etc.)  |
 | Resources        | `/api/resources/add/`                         | POST   | Add (ingest) new resource to knowledge base       |
-| Homework         | `/api/homework/upload/`                       | POST   | Upload homework (text or file)                    |
+| Homework         | `/api/homework/submit/`                       | POST   | Submit homework (text or file)                    |
 | Quiz             | `/api/quiz/generate/`                         | POST   | Generate quiz based on subject/topic              |
 | Quiz             | `/api/quiz/<quiz_id>/submit/`                 | POST   | Submit quiz answers                               |
 | Progress         | `/api/progress/`                              | GET    | Get all progress records for student              |
@@ -44,7 +44,7 @@ All API requests (except registration and login) require authentication using JW
 ## 1️⃣ AUTHENTICATION MODULE (ACCOUNTS APP)
 
 ### 1. User Registration
-**Endpoint:** `POST /api/accounts/register/`
+**Endpoint:** `POST /api/auth/register/`
 **Headers:** `Content-Type: application/json`
 
 **Example Request:**
@@ -73,7 +73,7 @@ All API requests (except registration and login) require authentication using JW
 ---
 
 ### 2. User Login (JWT Auth)
-**Endpoint:** `POST /api/accounts/login/`
+**Endpoint:** `POST /api/auth/login/`
 **Headers:** `Content-Type: application/json`
 
 **Example Request:**
@@ -102,7 +102,7 @@ All API requests (except registration and login) require authentication using JW
 ---
 
 ### 3. Get User Profile
-**Endpoint:** `GET /api/accounts/profile/`
+**Endpoint:** `GET /api/auth/profile/`
 **Headers:** `Authorization: Bearer <access_token>`
 
 **Example Response:**
@@ -120,7 +120,7 @@ All API requests (except registration and login) require authentication using JW
 ---
 
 ### 4. Refresh Access Token
-**Endpoint:** `POST /api/token/refresh/`
+**Endpoint:** `POST /api/auth/token/refresh/`
 **Headers:** `Content-Type: application/json`
 
 **Example Request:**
@@ -140,7 +140,7 @@ All API requests (except registration and login) require authentication using JW
 ---
 
 ### 5. Logout / Blacklist Token
-**Endpoint:** `POST /api/logout/`
+**Endpoint:** `POST /api/auth/logout/`
 **Headers:** `Content-Type: application/json`, `Authorization: Bearer <access_token>`
 
 **Example Request:**
@@ -164,7 +164,7 @@ All API requests (except registration and login) require authentication using JW
 ### Chat Session Management (REST)
 
 #### List All Sessions
-- **Endpoint:** `GET /api/sessions/`
+- **Endpoint:** `GET /api/chatbot/sessions/`
 - **Headers:** `Authorization: Bearer <access_token>`
 - **Example Response:**
 ```json
@@ -178,7 +178,7 @@ All API requests (except registration and login) require authentication using JW
 ```
 
 #### Create New Session
-- **Endpoint:** `POST /api/sessions/`
+- **Endpoint:** `POST /api/chatbot/sessions/`
 - **Headers:** `Authorization: Bearer <access_token>`
 - **Example Request:**
 ```json
@@ -194,7 +194,7 @@ All API requests (except registration and login) require authentication using JW
 ```
 
 #### Retrieve or Delete Session
-- **Endpoint:** `GET /api/sessions/<session_id>/` or `DELETE /api/sessions/<session_id>/`
+- **Endpoint:** `GET /api/chatbot/sessions/<session_id>/` or `DELETE /api/chatbot/sessions/<session_id>/`
 - **Headers:** `Authorization: Bearer <access_token>`
 - **Example Response (GET):**
 ```json
@@ -207,7 +207,7 @@ All API requests (except registration and login) require authentication using JW
 - **Notes:** DELETE returns HTTP 204.
 
 #### Get All Messages in a Session
-- **Endpoint:** `GET /api/sessions/<session_id>/messages/`
+- **Endpoint:** `GET /api/chatbot/sessions/<session_id>/messages/`
 - **Headers:** `Authorization: Bearer <access_token>`
 - **Example Response:**
 ```json
@@ -266,7 +266,8 @@ All API requests (except registration and login) require authentication using JW
   ```json
   {"error": "Something went wrong.", "session_id": "uuid"}
   ```
-**Notes:** Use JWT token for authentication (via query param). Handles streaming, TTS, and session context.
+**Notes:** Use JWT token for authentication (via query param). Handles streaming, TTS, and session context.  
+**Clarification:** Live chat uses `/ws/chat/` for real-time messages, but all chat session management (create/list/delete) is handled under `/api/chatbot/`.
 
 ---
 
@@ -293,7 +294,7 @@ All API requests (except registration and login) require authentication using JW
 ## 4️⃣ HOMEWORK MODULE
 
 ### Submit Homework
-- **Endpoint:** `POST /api/homework/upload/`
+- **Endpoint:** `POST /api/homework/submit/`
 - **Headers:** `Authorization: Bearer <access_token>`
 - **Example Request (text):**
 ```json
@@ -353,7 +354,51 @@ All API requests (except registration and login) require authentication using JW
   "wrong": ["Subtraction of fractions"]
 }
 ```
-**Notes:** AI analyzes performance, updates `Progress`, and passes learning data to RAG for personalization.
+**Notes:** AI analyzes performance, updates `Progress`, and passes learning data to RAG for personalization.  
+**Quiz Feedback:** The `"feedback"` field is always a string summary (not a JSON object).
+---
+
+## 9️⃣ STUDENT NOTES (AI NOTES)
+
+### Overview
+AI-generated study notes can be created and listed by the student. Useful for revision or as a summary of key topics.
+
+### Generate AI Study Note
+- **Endpoint:** `POST /api/student_notes/`
+- **Headers:** `Authorization: Bearer <access_token>`
+- **Example Request:**
+```json
+{
+  "subject": "Mathematics",
+  "topic": "Fractions"
+}
+```
+- **Example Response:**
+```json
+{
+  "note_id": 12,
+  "subject": "Mathematics",
+  "topic": "Fractions",
+  "content": "## Fractions Explained\n- A fraction shows parts of a whole.\n- Example: 1/2 means one out of two equal parts.\n**Tip:** Practice by dividing shapes into equal parts."
+}
+```
+
+### List All Generated Notes
+- **Endpoint:** `GET /api/student_notes/`
+- **Headers:** `Authorization: Bearer <access_token>`
+- **Example Response:**
+```json
+[
+  {
+    "note_id": 12,
+    "subject": "Mathematics",
+    "topic": "Fractions",
+    "content": "## Fractions Explained\n- A fraction shows parts of a whole.\n- Example: 1/2 means one out of two equal parts.\n**Tip:** Practice by dividing shapes into equal parts.",
+    "created_at": "2025-06-08T12:34:56Z"
+  }
+]
+```
+**Notes:** Notes are generated using AI and stored for the student. Markdown formatting is used for headings and bullet points.
 
 ---
 
@@ -513,21 +558,20 @@ All API requests (except registration and login) require authentication using JW
 ---
 
 ## JWT FLOW SUMMARY
-1. Register → `/api/accounts/register/`
-2. Login → `/api/accounts/login/` → returns access + refresh
+1. Register → `/api/auth/register/`
+2. Login → `/api/auth/login/` → returns access + refresh
 3. Use APIs → send `Authorization: Bearer <access_token>`
-4. When expired → `/api/token/refresh/` with refresh token
-5. Logout → `/api/logout/` to blacklist token
+4. When expired → `/api/auth/token/refresh/` with refresh token
+5. Logout → `/api/auth/logout/` to blacklist token
 
----
 
 ## 📝 Integration Checklist
-1. Register or login to obtain access/refresh tokens.
+1. Register or login to obtain access/refresh tokens via `/api/auth/register/` or `/api/auth/login/`.
 2. Store `access_token` (for API) and `refresh_token` (for renewal).
 3. For each API call, send `Authorization: Bearer <access_token>`.
-4. On 401/403 errors, refresh access token using `/api/token/refresh/`.
-5. For chat, create a session (`POST /api/sessions/`) and use its `session_id`.
-6. For real-time chat, connect WebSocket with `token` and (optionally) `session_id`.
+4. On 401/403 errors, refresh access token using `/api/auth/token/refresh/`.
+5. For chat, create a session (`POST /api/chatbot/sessions/`) and use its `session_id`.
+6. For real-time chat, connect WebSocket at `/ws/chat/` with `token` and (optionally) `session_id`. All chat session management is handled via `/api/chatbot/`.
 7. Use resource, quiz, homework, progress, recommendations, and report endpoints as needed.
 8. Handle all API and WebSocket errors gracefully in the UI.
 

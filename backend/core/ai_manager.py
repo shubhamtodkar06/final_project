@@ -84,35 +84,90 @@ def fetch_context(student_id=None, subject=None):
 
 def build_prompt(mode, query, context_data=""):
     """
-    Dynamically create prompt depending on use case.
+    Dynamically create prompt depending on use case with improved clarity and explicit structure.
     """
     templates = {
-        "chat": f"""You are a friendly tutor for students aged 5–12.
-        Answer clearly and educationally.
-        Context:\n{context_data}\n
-        Student question: {query}
+        "chat": f"""ROLE: You are a kind, supportive AI tutor for students aged 5–12. 
+        TASK: Respond to the student's question with simple, educational, and encouraging explanations.
+        TONE: Friendly, patient, and age-appropriate.
+        CONTEXT:\n{context_data}\n
+        QUESTION:\n{query}\n
+        OUTPUT INSTRUCTIONS:
+        - Write short and clear answers (2–4 sentences).
+        - Include one simple example if possible.
+        - Avoid technical jargon, use real-life analogies.
         """,
 
-        "quiz": f"""Generate a short quiz for revision.
-        Context:\n{context_data}\n
-        Topic: {query}
-        Return JSON: {{ "questions": [...], "answers": [...] }}""",
+        "quiz": f"""ROLE: You are a quiz generator for school students (Grades 5–12).
+        TASK: Create multiple-choice questions based on the provided topic.
+        CONTEXT (student progress and available resources):\n{context_data}\n
+        TOPIC: {query}
+        STRICT OUTPUT REQUIREMENTS:
+        1. You must return ONLY valid JSON (no markdown, no code blocks, no explanations).
+        2. The JSON object must have one key: "questions".
+        3. Each item in "questions" must include:
+           - "q": the question text (string)
+           - "options": a list of 4 short answer choices (strings)
+           - "correct": exactly one correct answer from the list (string)
+        4. Questions should be short, factual, and suitable for ages 5–12.
+        5. Return 4–6 questions.
+        EXAMPLE OUTPUT:
+        {{
+            "questions": [
+                {{
+                    "q": "What does a fraction represent?",
+                    "options": ["A whole number", "A part of a whole", "A decimal", "A shape"],
+                    "correct": "A part of a whole"
+                }},
+                {{
+                    "q": "In the fraction 3/4, what is the numerator?",
+                    "options": ["3", "4", "7", "1"],
+                    "correct": "3"
+                }}
+            ]
+        }}
+        """,
 
-        "homework_feedback": f"""Evaluate the student's homework submission.
-        Context:\n{context_data}\n
-        Homework Text:\n{query}\n
-        Provide JSON: {{ "feedback": "...", "score": float }}""",
+        "homework_feedback": f"""ROLE: You are a teacher evaluating a student's homework.
+        TASK: Provide concise, helpful feedback and assign a score between 0 and 100.
+        CONTEXT:\n{context_data}\n
+        HOMEWORK SUBMISSION:\n{query}\n
+        STRICT OUTPUT REQUIREMENTS:
+        1. Return ONLY valid JSON (no markdown, no code fences, no explanations).
+        2. The JSON object must have these keys:
+           - "feedback": a short paragraph (2–4 sentences) describing what was good and what needs improvement.
+           - "score": a float number between 0.0 and 100.0.
+        EXAMPLE OUTPUT:
+        {{
+            "feedback": "Good effort! You understood fractions but made a few mistakes with denominators. Revise that section.",
+            "score": 78.5
+        }}
+        """,
 
-        "report": f"""Summarize student's weekly progress.
-        Context:\n{context_data}\n
-        Create JSON with keys: ['summary', 'improvement_tips']""",
+        "report": f"""ROLE: You are an AI progress analyst summarizing a student's weekly learning performance.
+        TASK: Generate a parent-friendly summary and improvement tips.
+        CONTEXT:\n{context_data}\n
+        DATA SUMMARY INPUT:\n{query}\n
+        STRICT OUTPUT FORMAT:
+        {{
+            "summary": "Short 2–3 sentence summary of student performance.",
+            "improvement_tips": ["Tip 1", "Tip 2", "Tip 3"]
+        }}
+        """,
 
-        # ✅ NEW: "note" mode for AI-generated study notes
-        "note": f"""You are an educational tutor generating clear, age-appropriate study notes
-        for school students (Grades 5–12). Use simple explanations, examples, and subheadings.
-        Context:\n{context_data}\n
-        User request:\n{query}\n
-        Format output as structured markdown or paragraphs.
+        "note": f"""ROLE: You are an AI educational content generator creating personalized study notes.
+        TASK: Generate age-appropriate, easy-to-understand notes for Grades 5–12 students.
+        CONTEXT:\n{context_data}\n
+        USER REQUEST:\n{query}\n
+        OUTPUT INSTRUCTIONS:
+        - Provide content in markdown-like structured text (with **headings** and bullet points).
+        - Include definitions, examples, and a short summary section.
+        - Avoid excessive details, keep the tone simple and engaging.
+        EXAMPLE OUTPUT:
+        ## Fractions Explained
+        - A fraction shows parts of a whole.
+        - Example: 1/2 means one out of two equal parts.
+        **Tip:** Practice by dividing shapes into equal parts.
         """
     }
     return templates.get(mode, query)
