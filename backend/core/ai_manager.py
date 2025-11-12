@@ -37,14 +37,41 @@ qa_chain = ConversationalRetrievalChain.from_llm(
 def fetch_context(student_id=None, subject=None):
     """
     Fetch relevant info from ChromaDB and progress data.
+    Enrich context with student's overall average score and combined weak/strong topics.
+    This context is used for all query types (chat, quiz, homework, report).
     """
     context_data = ""
 
-    # Student progress (personalized insight)
+    overall_avg = None
+    overall_weak = set()
+    overall_strong = set()
+    progress_records = []
     if student_id:
-        progress_records = Progress.objects.filter(student_id=student_id)
+        progress_records = list(Progress.objects.filter(student_id=student_id))
+        # Compute overall average score
+        scores = [p.average_score for p in progress_records if p.average_score is not None]
+        if scores:
+            overall_avg = round(sum(scores) / len(scores), 2)
+        # Gather all weak/strong topics across all subjects
         for p in progress_records:
-            context_data += f"\nSubject: {p.subject}\nWeak Topics: {p.weak_topics}\nStrong Topics: {p.strong_topics}\n"
+            overall_weak.update([t for t in (p.weak_topics or []) if t])
+            overall_strong.update([t for t in (p.strong_topics or []) if t])
+
+    # Add overall stats to context if available
+    if overall_avg is not None:
+        context_data += f"Student Average Score: {overall_avg}\n"
+    if overall_weak:
+        context_data += f"Overall Weak Topics: {', '.join(sorted(overall_weak))}\n"
+    if overall_strong:
+        context_data += f"Overall Strong Topics: {', '.join(sorted(overall_strong))}\n"
+
+    # Add per-subject breakdown
+    for p in progress_records:
+        context_data += (
+            f"\nSubject: {p.subject}\n"
+            f"Weak Topics: {p.weak_topics}\n"
+            f"Strong Topics: {p.strong_topics}\n"
+        )
 
     # Subject-based notes (resources)
     if subject:

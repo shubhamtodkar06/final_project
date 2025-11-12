@@ -1,31 +1,53 @@
-Here’s your fully updated doc_integration.txt — with clear, complete documentation for Authentication, Resource ingestion, Chat sessions, and WebSocket communication.
-You can safely replace your current file content with this 👇
-
-⸻
-
-
 =========================
 Frontend Integration Guide
 =========================
 
-This document provides the API endpoints and integration details for **authentication**, **resource ingestion**, **chat sessions**, and **WebSocket communication** for the AI chatbot platform.
+This document provides the API endpoints and integration details for **authentication**, **resource ingestion**, **chat/chatbot (REST + WebSocket)**, **homework**, **quiz**, **progress/analytics**, **recommendations**, and **reports** for the AI chatbot platform.
 
 All API requests (except registration and login) require authentication using JWT tokens.
 
-===================================================
-1️⃣ AUTHENTICATION MODULE (ACCOUNTS APP)
-===================================================
+---
 
-----------------------
-1. User Registration
-----------------------
+## 🚦 Frontend API Reference Table
+
+| Module           | Endpoint                                      | Method | Purpose/Description                               |
+|------------------|-----------------------------------------------|--------|---------------------------------------------------|
+| Auth             | `/api/accounts/register/`                     | POST   | Register new user                                 |
+| Auth             | `/api/accounts/login/`                        | POST   | Login (get JWT tokens)                            |
+| Auth             | `/api/accounts/profile/`                      | GET    | Get user profile                                  |
+| Auth             | `/api/token/refresh/`                         | POST   | Refresh access token                              |
+| Auth             | `/api/logout/`                                | POST   | Logout (blacklist token)                          |
+| Chat (REST)      | `/api/sessions/`                              | GET    | List chat sessions                                |
+| Chat (REST)      | `/api/sessions/`                              | POST   | Create new chat session                           |
+| Chat (REST)      | `/api/sessions/<session_id>/`                 | GET    | Retrieve chat session                             |
+| Chat (REST)      | `/api/sessions/<session_id>/`                 | DELETE | Delete chat session                               |
+| Chat (REST)      | `/api/sessions/<session_id>/messages/`        | GET    | List all messages in a session                    |
+| Chat (WebSocket) | `/ws/chat/`                                   | WS     | Real-time chatbot (streaming, TTS, status, etc.)  |
+| Resources        | `/api/resources/add/`                         | POST   | Add (ingest) new resource to knowledge base       |
+| Homework         | `/api/homework/upload/`                       | POST   | Upload homework (text or file)                    |
+| Quiz             | `/api/quiz/generate/`                         | POST   | Generate quiz based on subject/topic              |
+| Quiz             | `/api/quiz/<quiz_id>/submit/`                 | POST   | Submit quiz answers                               |
+| Progress         | `/api/progress/`                              | GET    | Get all progress records for student              |
+| Progress         | `/api/progress/overview/`                     | GET    | Get summary of progress across subjects           |
+| Progress         | `/api/progress/subject/<subject>/`            | GET    | Get analytics for a specific subject              |
+| Progress         | `/api/progress/trend/`                        | GET    | Get improvement trend summary                     |
+| Progress         | `/api/progress/analytics/`                    | GET    | Get analytics for dashboard                       |
+| Progress         | `/api/progress/analytics/deep/`               | GET    | Advanced analytics (leaderboard, readiness, etc.) |
+| Recommendations  | `/api/recommendations/ai/`                    | GET    | Get AI-powered study tips & resource suggestions  |
+| Reports          | `/api/reports/weekly/`                        | GET    | Get weekly parent/student report                  |
+
+---
+
+
+---
+
+## 1️⃣ AUTHENTICATION MODULE (ACCOUNTS APP)
+
+### 1. User Registration
 **Endpoint:** `POST /api/accounts/register/`
+**Headers:** `Content-Type: application/json`
 
-**Headers:**
-
-Content-Type: application/json
-
-**Request JSON:**
+**Example Request:**
 ```json
 {
   "username": "john_doe",
@@ -35,9 +57,9 @@ Content-Type: application/json
   "password": "strongpassword123",
   "password2": "strongpassword123"
 }
-
-Response:
-
+```
+**Example Response:**
+```json
 {
   "id": 1,
   "username": "john_doe",
@@ -45,30 +67,24 @@ Response:
   "first_name": "John",
   "last_name": "Doe"
 }
+```
+**Notes:** No authentication needed. Creates a new user.
 
-✅ Creates a new user in the system.
+---
 
-⸻
+### 2. User Login (JWT Auth)
+**Endpoint:** `POST /api/accounts/login/`
+**Headers:** `Content-Type: application/json`
 
-	2.	User Login (JWT Auth)
-
-⸻
-
-Endpoint: POST /api/accounts/login/
-
-Headers:
-
-Content-Type: application/json
-
-Request JSON:
-
+**Example Request:**
+```json
 {
   "username": "john_doe",
   "password": "strongpassword123"
 }
-
-Response:
-
+```
+**Example Response:**
+```json
 {
   "refresh": "<refresh_token>",
   "access": "<access_token>",
@@ -80,23 +96,17 @@ Response:
     "last_name": "Doe"
   }
 }
+```
+**Notes:** Use `access` token for API calls. Store `refresh` for renewal.
 
-✅ Use the access token for API calls, and the refresh token to renew it when expired.
+---
 
-⸻
+### 3. Get User Profile
+**Endpoint:** `GET /api/accounts/profile/`
+**Headers:** `Authorization: Bearer <access_token>`
 
-	3.	Get User Profile
-
-⸻
-
-Endpoint: GET /api/accounts/profile/
-
-Headers:
-
-Authorization: Bearer <access_token>
-
-Response:
-
+**Example Response:**
+```json
 {
   "id": 1,
   "username": "john_doe",
@@ -104,102 +114,60 @@ Response:
   "first_name": "John",
   "last_name": "Doe"
 }
+```
+**Notes:** Returns current user info. Requires authentication.
 
-✅ Returns profile details of the currently authenticated user.
+---
 
-⸻
+### 4. Refresh Access Token
+**Endpoint:** `POST /api/token/refresh/`
+**Headers:** `Content-Type: application/json`
 
-	4.	Refresh Access Token
-
-⸻
-
-Endpoint: POST /api/token/refresh/
-
-Headers:
-
-Content-Type: application/json
-
-Request JSON:
-
+**Example Request:**
+```json
 {
   "refresh": "<refresh_token>"
 }
-
-Response:
-
+```
+**Example Response:**
+```json
 {
   "access": "<new_access_token>"
 }
+```
+**Notes:** Use when access token expires.
 
-✅ Use this endpoint when your access token expires.
+---
 
-⸻
+### 5. Logout / Blacklist Token
+**Endpoint:** `POST /api/logout/`
+**Headers:** `Content-Type: application/json`, `Authorization: Bearer <access_token>`
 
-	5.	Logout / Blacklist Token
-
-⸻
-
-Endpoint: POST /api/logout/
-
-Headers:
-
-Content-Type: application/json
-Authorization: Bearer <access_token>
-
-Request JSON:
-
+**Example Request:**
+```json
 {
   "refresh": "<refresh_token>"
 }
-
-Response:
-
+```
+**Example Response:**
+```json
 {
   "message": "Successfully logged out."
 }
+```
+**Notes:** Invalidates refresh token.
 
-✅ Invalidates the refresh token to prevent reuse.
+---
 
-===================================================
-2️⃣ RESOURCE INGESTION (RAG DATABASE)
+## 2️⃣ CHAT MODULE (REST + WebSocket)
 
-Endpoint: POST /api/resources/add/
+### Chat Session Management (REST)
 
-Headers:
-
-Content-Type: application/json
-Authorization: Bearer <access_token>
-
-Request JSON:
-
-{
-  "title": "Intro to Machine Learning",
-  "content": "Machine learning is a subset of AI that enables systems to learn from data..."
-}
-
-Response:
-
-{
-  "message": "Resource ingested and indexed."
-}
-
-✅ Stores learning content in PostgreSQL and indexes it into ChromaDB for semantic search.
-
-===================================================
-3️⃣ CHAT SESSION MANAGEMENT
-
-⸻
-
-List All Sessions
-
-Endpoint: GET /api/sessions/
-
-Headers:
-
-Authorization: Bearer <access_token>
-
-Response:
-
+#### List All Sessions
+- **Endpoint:** `GET /api/sessions/`
+- **Headers:** `Authorization: Bearer <access_token>`
+- **Example Response:**
+```json
 [
   {
     "id": "uuid-string",
@@ -207,54 +175,42 @@ Response:
     "created_at": "2025-06-08T12:34:56Z"
   }
 ]
+```
 
-
-⸻
-
-Create New Session
-
-Endpoint: POST /api/sessions/
-
-Request JSON:
-
-{
-  "title": "New Study Session"
-}
-
-Response:
-
+#### Create New Session
+- **Endpoint:** `POST /api/sessions/`
+- **Headers:** `Authorization: Bearer <access_token>`
+- **Example Request:**
+```json
+{ "title": "New Study Session" }
+```
+- **Example Response:**
+```json
 {
   "id": "uuid-string",
   "title": "New Study Session",
   "created_at": "2025-06-08T12:34:56Z"
 }
+```
 
-
-⸻
-
-Retrieve or Delete Session
-
-Endpoint: GET /api/sessions/<session_id>/
-Endpoint: DELETE /api/sessions/<session_id>/
-
-Response (GET):
-
+#### Retrieve or Delete Session
+- **Endpoint:** `GET /api/sessions/<session_id>/` or `DELETE /api/sessions/<session_id>/`
+- **Headers:** `Authorization: Bearer <access_token>`
+- **Example Response (GET):**
+```json
 {
   "id": "uuid-string",
   "title": "Session title",
   "created_at": "2025-06-08T12:34:56Z"
 }
+```
+- **Notes:** DELETE returns HTTP 204.
 
-✅ Delete returns HTTP 204 (no content).
-
-⸻
-
-Get All Messages in a Session
-
-Endpoint: GET /api/sessions/<session_id>/messages/
-
-Response:
-
+#### Get All Messages in a Session
+- **Endpoint:** `GET /api/sessions/<session_id>/messages/`
+- **Headers:** `Authorization: Bearer <access_token>`
+- **Example Response:**
+```json
 [
   {
     "id": 10,
@@ -269,161 +225,314 @@ Response:
     "created_at": "2025-06-08T12:35:05Z"
   }
 ]
+```
 
-===================================================
-4️⃣ REAL-TIME CHATBOT (WebSocket)
+---
 
-Endpoint:
-ws://<backend-host>/ws/chat/
+### Chatbot (WebSocket)
 
-Query Parameters (optional):
+- **Endpoint:** `ws://<backend-host>/ws/chat/`
+- **Query Parameters (optional):** `session_id=<uuid>`, `token=<jwt_access_token>`
 
-session_id=<uuid>
-token=<jwt_access_token>
-
-
-⸻
-
-Client → Server Message:
-
+#### Example Client → Server Message
+```json
 {
   "message": "Explain supervised learning.",
   "session_id": "uuid-string",
   "tts": true
 }
+```
 
-
-⸻
-
-Server → Client Responses:
-
-✅ Typing Indicator
-
-{"type": "status", "value": "typing", "session_id": "uuid"}
-
-✅ Partial Response
-
-{"type": "partial", "text": "Supervised learning is...", "session_id": "uuid"}
-
-✅ Final Response
-
-{
-  "type": "final",
-  "reply": "Supervised learning is a method where models are trained using labeled data.",
-  "session_id": "uuid",
-  "audio_b64": "<base64-wav>",
-  "content_type": "audio/wav"
-}
-
-✅ Error
-
-{"error": "Something went wrong.", "session_id": "uuid"}
-
-===================================================
-5️⃣ GENERAL NOTES
-	•	All timestamps follow ISO 8601 format.
-	•	All secure endpoints require Authorization: Bearer <access_token>.
-	•	WebSocket should handle partial messages for streaming AI replies.
-	•	Each user can maintain multiple chat sessions.
-	•	When starting a new chat, call POST /api/sessions/ and use the returned session_id for context.
-
-===================================================
-6️⃣ JWT FLOW SUMMARY
-	1.	Register → /api/accounts/register/
-	2.	Login → /api/accounts/login/ → returns access + refresh
-	3.	Use APIs → send Authorization: Bearer <access>
-	4.	When expired → /api/token/refresh/ with refresh token
-	5.	Logout → /api/logout/ to blacklist token
-
-===================================================
-CONTACT
-
-For questions, contact backend developer: Shubham Todkar
-📧 Email: setodkar6@gmail.com
+#### Example Server → Client Responses
+- **Typing Indicator**
+  ```json
+  {"type": "status", "value": "typing", "session_id": "uuid"}
+  ```
+- **Partial Response**
+  ```json
+  {"type": "partial", "text": "Supervised learning is...", "session_id": "uuid"}
+  ```
+- **Final Response**
+  ```json
+  {
+    "type": "final",
+    "reply": "Supervised learning is a method where models are trained using labeled data.",
+    "session_id": "uuid",
+    "audio_b64": "<base64-wav>",
+    "content_type": "audio/wav"
+  }
+  ```
+- **Error**
+  ```json
+  {"error": "Something went wrong.", "session_id": "uuid"}
+  ```
+**Notes:** Use JWT token for authentication (via query param). Handles streaming, TTS, and session context.
 
 ---
 
-Would you like me to also generate a **frontend API reference table (endpoint → method → purpose)** at the top of this doc for easier navigation? It’s often very useful for frontend integration.
+## 3️⃣ RESOURCE INGESTION (RAG DATABASE)
 
+### Add Resource
+- **Endpoint:** `POST /api/resources/add/`
+- **Headers:** `Content-Type: application/json`, `Authorization: Bearer <access_token>`
+- **Example Request:**
+```json
+{
+  "title": "Intro to Machine Learning",
+  "content": "Machine learning is a subset of AI that enables systems to learn from data..."
+}
+```
+- **Example Response:**
+```json
+{ "message": "Resource ingested and indexed.", "id": 17 }
+```
+**Notes:** Stores content in DB and indexes to ChromaDB for search.
 
-Module
-Endpoint
-Method
-Description
-Auth
-/api/accounts/register/
-POST
-Create user
-Chat
-/ws/chat/
-WS
-Chat WebSocket
-Resources
-/api/resources/add/
-POST
-Add resource
-Homework
-/api/homework/upload/
-POST
-Upload homework
-Homework
-/api/homework/<id>/feedback/
-GET
-Get AI feedback
-Quiz
-/api/quiz/generate/
-POST
-Generate quiz
-Quiz
-/api/quiz/submit/
-POST
-Submit and score
-Progress
-/api/progress/
-GET
-Student progress summary
-Recommendations
-/api/recommendations/
-GET
-Personalized resource suggestions
-Reports
-/api/reports/weekly/
-GET
-Get parent report summary
+---
 
+## 4️⃣ HOMEWORK MODULE
 
-===================================================
-QUIZ MANAGEMENT (AI Adaptive System)
-===================================================
+### Submit Homework
+- **Endpoint:** `POST /api/homework/upload/`
+- **Headers:** `Authorization: Bearer <access_token>`
+- **Example Request (text):**
+```json
+{
+  "subject": "Mathematics",
+  "text_content": "My solution is..."
+}
+```
+- **Example Response:**
+```json
+{
+  "message": "Homework submitted and evaluated.",
+  "homework_id": 42,
+  "feedback": "Good job! Revise fractions.",
+  "score": 88.5
+}
+```
+**Notes:** Accepts text or file upload. AI evaluates and returns feedback + score. Progress auto-updated.
 
-1️⃣ Generate Quiz
-Endpoint: POST /api/quiz/generate/
-Headers: Authorization: Bearer <access_token>
-Request JSON:
+---
+
+## 5️⃣ QUIZ MANAGEMENT (AI Adaptive System)
+
+### Generate Quiz
+- **Endpoint:** `POST /api/quiz/generate/`
+- **Headers:** `Authorization: Bearer <access_token>`
+- **Example Request:**
+```json
 {
   "subject": "Mathematics",
   "topic": "Fractions"
 }
-Response:
+```
+- **Example Response:**
+```json
 {
   "quiz_id": 5,
   "questions": [
     {"q": "What is 1/2 + 1/4?", "options": ["1/4", "3/4", "1/2", "1"], "correct": "3/4"}
   ]
 }
+```
 
-2️⃣ Submit Quiz
-Endpoint: POST /api/quiz/<quiz_id>/submit/
-Request JSON:
-{
-  "answers": ["3/4", "1/2"]
-}
-Response:
+### Submit Quiz
+- **Endpoint:** `POST /api/quiz/<quiz_id>/submit/`
+- **Headers:** `Authorization: Bearer <access_token>`
+- **Example Request:**
+```json
+{ "answers": ["3/4", "1/2"] }
+```
+- **Example Response:**
+```json
 {
   "score": 80.0,
   "feedback": "Good progress, revise Fractions.",
   "correct": ["Addition of fractions"],
   "wrong": ["Subtraction of fractions"]
 }
+```
+**Notes:** AI analyzes performance, updates `Progress`, and passes learning data to RAG for personalization.
 
-✅ AI analyzes performance, updates `Progress` dynamically, and passes learning data back to RAG context for personalized tutoring.
+---
+
+## 6️⃣ PROGRESS & ANALYTICS
+
+### Get All Progress Records
+- **Endpoint:** `GET /api/progress/`
+- **Headers:** `Authorization: Bearer <access_token>`
+- **Example Response:**
+```json
+[
+  {
+    "id": 1,
+    "student": 7,
+    "subject": "Math",
+    "average_score": 88.0,
+    "weak_topics": ["Fractions"],
+    "strong_topics": ["Algebra"],
+    "completion_rate": 75.0,
+    "last_updated": "2025-06-08T12:34:56Z"
+  }
+]
+```
+
+### Progress Overview
+- **Endpoint:** `GET /api/progress/overview/`
+- **Headers:** `Authorization: Bearer <access_token>`
+- **Example Response:**
+```json
+{
+  "average_score": 83.5,
+  "completion_rate": 70.0,
+  "subjects": [
+    {
+      "subject": "Math",
+      "average_score": 88.0,
+      "weak_topics": ["Fractions"],
+      "strong_topics": ["Algebra"],
+      "completion_rate": 75.0
+    }
+  ]
+}
+```
+
+### Subject Analytics
+- **Endpoint:** `GET /api/progress/subject/<subject>/`
+- **Headers:** `Authorization: Bearer <access_token>`
+- **Example Response:**
+```json
+{
+  "subject": "Math",
+  "average_score": 88.0,
+  "completion_rate": 75.0,
+  "weak_topics": ["Fractions"],
+  "strong_topics": ["Algebra"],
+  "trend": [
+    {"date": "2025-05-11", "score": 80},
+    {"date": "2025-05-18", "score": 82}
+  ]
+}
+```
+
+### Trend Analytics
+- **Endpoint:** `GET /api/progress/trend/`
+- **Headers:** `Authorization: Bearer <access_token>`
+- **Example Response:**
+```json
+{
+  "trend_summary": [
+    {
+      "subject": "Math",
+      "average_score": 88.0,
+      "completion_rate": 75.0,
+      "improvement": "+8.8%"
+    }
+  ],
+  "overall_average": 88.0
+}
+```
+
+### Dashboard Analytics
+- **Endpoint:** `GET /api/progress/analytics/`
+- **Headers:** `Authorization: Bearer <access_token>`
+- **Example Response:**
+```json
+{
+  "subject_performance": [{"subject": "Math", "score": 88.0}],
+  "topic_distribution": {"weak": 20.0, "strong": 80.0},
+  "weekly_trend": [{"week": "2025-05-04", "avg_score": 85}],
+  "average_completion": 70.0,
+  "engagement": [{"metric": "Chat Interactions", "count": 30}]
+}
+```
+
+### Deep Analytics (for dashboards)
+- **Endpoint:** `GET /api/progress/analytics/deep/`
+- **Headers:** `Authorization: Bearer <access_token>`
+- **Example Response:**
+```json
+{
+  "subjects": [
+    {"subject": "Math", "average_score": 78.5, "completion_rate": 62.0, "weak_count": 3, "strong_count": 5, "weak_topics": ["Fractions"], "strong_topics": ["Algebra"]}
+  ],
+  "top_weak_topics": [{"topic": "Fractions", "count": 2}],
+  "leaderboard": [{"subject": "English", "score": 84.0}],
+  "readiness": [{"subject": "Science", "readiness_index": 71.4}]
+}
+```
+**Notes:** Use for charts, dashboards, and progress visualizations.
+
+---
+
+## 7️⃣ RECOMMENDATIONS
+
+### Get Personalized Recommendations
+- **Endpoint:** `GET /api/recommendations/ai/`
+- **Headers:** `Authorization: Bearer <access_token>`
+- **Example Response:**
+```json
+{
+  "message": "Personalized recommendations generated.",
+  "weak_topics": ["Fractions"],
+  "ai_suggestion": "Revise Fractions and try these resources...",
+  "resources": [
+    {"id": 42, "title": "Fractions 101", "subject": "Math", "grade_level": 5, "uploaded_at": "2025-06-08T12:34:56Z"}
+  ]
+}
+```
+**Notes:** Combines AI-generated advice and top-matching resources.
+
+---
+
+## 8️⃣ REPORTS MODULE
+
+### Get Weekly Report
+- **Endpoint:** `GET /api/reports/weekly/`
+- **Headers:** `Authorization: Bearer <access_token>`
+- **Example Response:**
+```json
+{
+  "student": "john_doe",
+  "summary": "John made good progress in Math. Revise Fractions.",
+  "context_used": "Subject: Math, Avg: 88.0, Weak: ['Fractions'], Strong: ['Algebra']\n"
+}
+```
+**Notes:** For parent dashboards or weekly review.
+
+---
+
+## GENERAL NOTES
+- All timestamps are ISO 8601 strings.
+- All secure endpoints require `Authorization: Bearer <access_token>`.
+- WebSocket endpoint supports partial/final streaming and TTS.
+- Each user can maintain multiple chat sessions.
+- When starting a new chat, create a session and use its `session_id`.
+
+---
+
+## JWT FLOW SUMMARY
+1. Register → `/api/accounts/register/`
+2. Login → `/api/accounts/login/` → returns access + refresh
+3. Use APIs → send `Authorization: Bearer <access_token>`
+4. When expired → `/api/token/refresh/` with refresh token
+5. Logout → `/api/logout/` to blacklist token
+
+---
+
+## 📝 Integration Checklist
+1. Register or login to obtain access/refresh tokens.
+2. Store `access_token` (for API) and `refresh_token` (for renewal).
+3. For each API call, send `Authorization: Bearer <access_token>`.
+4. On 401/403 errors, refresh access token using `/api/token/refresh/`.
+5. For chat, create a session (`POST /api/sessions/`) and use its `session_id`.
+6. For real-time chat, connect WebSocket with `token` and (optionally) `session_id`.
+7. Use resource, quiz, homework, progress, recommendations, and report endpoints as needed.
+8. Handle all API and WebSocket errors gracefully in the UI.
+
+---
+
+## CONTACT
+For questions, contact backend developer: Shubham Todkar  
+📧 Email: setodkar6@gmail.com
