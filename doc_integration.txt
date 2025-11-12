@@ -1,0 +1,429 @@
+Here’s your fully updated doc_integration.txt — with clear, complete documentation for Authentication, Resource ingestion, Chat sessions, and WebSocket communication.
+You can safely replace your current file content with this 👇
+
+⸻
+
+
+=========================
+Frontend Integration Guide
+=========================
+
+This document provides the API endpoints and integration details for **authentication**, **resource ingestion**, **chat sessions**, and **WebSocket communication** for the AI chatbot platform.
+
+All API requests (except registration and login) require authentication using JWT tokens.
+
+===================================================
+1️⃣ AUTHENTICATION MODULE (ACCOUNTS APP)
+===================================================
+
+----------------------
+1. User Registration
+----------------------
+**Endpoint:** `POST /api/accounts/register/`
+
+**Headers:**
+
+Content-Type: application/json
+
+**Request JSON:**
+```json
+{
+  "username": "john_doe",
+  "first_name": "John",
+  "last_name": "Doe",
+  "email": "john@example.com",
+  "password": "strongpassword123",
+  "password2": "strongpassword123"
+}
+
+Response:
+
+{
+  "id": 1,
+  "username": "john_doe",
+  "email": "john@example.com",
+  "first_name": "John",
+  "last_name": "Doe"
+}
+
+✅ Creates a new user in the system.
+
+⸻
+
+	2.	User Login (JWT Auth)
+
+⸻
+
+Endpoint: POST /api/accounts/login/
+
+Headers:
+
+Content-Type: application/json
+
+Request JSON:
+
+{
+  "username": "john_doe",
+  "password": "strongpassword123"
+}
+
+Response:
+
+{
+  "refresh": "<refresh_token>",
+  "access": "<access_token>",
+  "user": {
+    "id": 1,
+    "username": "john_doe",
+    "email": "john@example.com",
+    "first_name": "John",
+    "last_name": "Doe"
+  }
+}
+
+✅ Use the access token for API calls, and the refresh token to renew it when expired.
+
+⸻
+
+	3.	Get User Profile
+
+⸻
+
+Endpoint: GET /api/accounts/profile/
+
+Headers:
+
+Authorization: Bearer <access_token>
+
+Response:
+
+{
+  "id": 1,
+  "username": "john_doe",
+  "email": "john@example.com",
+  "first_name": "John",
+  "last_name": "Doe"
+}
+
+✅ Returns profile details of the currently authenticated user.
+
+⸻
+
+	4.	Refresh Access Token
+
+⸻
+
+Endpoint: POST /api/token/refresh/
+
+Headers:
+
+Content-Type: application/json
+
+Request JSON:
+
+{
+  "refresh": "<refresh_token>"
+}
+
+Response:
+
+{
+  "access": "<new_access_token>"
+}
+
+✅ Use this endpoint when your access token expires.
+
+⸻
+
+	5.	Logout / Blacklist Token
+
+⸻
+
+Endpoint: POST /api/logout/
+
+Headers:
+
+Content-Type: application/json
+Authorization: Bearer <access_token>
+
+Request JSON:
+
+{
+  "refresh": "<refresh_token>"
+}
+
+Response:
+
+{
+  "message": "Successfully logged out."
+}
+
+✅ Invalidates the refresh token to prevent reuse.
+
+===================================================
+2️⃣ RESOURCE INGESTION (RAG DATABASE)
+
+Endpoint: POST /api/resources/add/
+
+Headers:
+
+Content-Type: application/json
+Authorization: Bearer <access_token>
+
+Request JSON:
+
+{
+  "title": "Intro to Machine Learning",
+  "content": "Machine learning is a subset of AI that enables systems to learn from data..."
+}
+
+Response:
+
+{
+  "message": "Resource ingested and indexed."
+}
+
+✅ Stores learning content in PostgreSQL and indexes it into ChromaDB for semantic search.
+
+===================================================
+3️⃣ CHAT SESSION MANAGEMENT
+
+⸻
+
+List All Sessions
+
+Endpoint: GET /api/sessions/
+
+Headers:
+
+Authorization: Bearer <access_token>
+
+Response:
+
+[
+  {
+    "id": "uuid-string",
+    "title": "Session 1",
+    "created_at": "2025-06-08T12:34:56Z"
+  }
+]
+
+
+⸻
+
+Create New Session
+
+Endpoint: POST /api/sessions/
+
+Request JSON:
+
+{
+  "title": "New Study Session"
+}
+
+Response:
+
+{
+  "id": "uuid-string",
+  "title": "New Study Session",
+  "created_at": "2025-06-08T12:34:56Z"
+}
+
+
+⸻
+
+Retrieve or Delete Session
+
+Endpoint: GET /api/sessions/<session_id>/
+Endpoint: DELETE /api/sessions/<session_id>/
+
+Response (GET):
+
+{
+  "id": "uuid-string",
+  "title": "Session title",
+  "created_at": "2025-06-08T12:34:56Z"
+}
+
+✅ Delete returns HTTP 204 (no content).
+
+⸻
+
+Get All Messages in a Session
+
+Endpoint: GET /api/sessions/<session_id>/messages/
+
+Response:
+
+[
+  {
+    "id": 10,
+    "sender": "user",
+    "content": "What is supervised learning?",
+    "created_at": "2025-06-08T12:35:01Z"
+  },
+  {
+    "id": 11,
+    "sender": "assistant",
+    "content": "Supervised learning is a machine learning technique...",
+    "created_at": "2025-06-08T12:35:05Z"
+  }
+]
+
+===================================================
+4️⃣ REAL-TIME CHATBOT (WebSocket)
+
+Endpoint:
+ws://<backend-host>/ws/chat/
+
+Query Parameters (optional):
+
+session_id=<uuid>
+token=<jwt_access_token>
+
+
+⸻
+
+Client → Server Message:
+
+{
+  "message": "Explain supervised learning.",
+  "session_id": "uuid-string",
+  "tts": true
+}
+
+
+⸻
+
+Server → Client Responses:
+
+✅ Typing Indicator
+
+{"type": "status", "value": "typing", "session_id": "uuid"}
+
+✅ Partial Response
+
+{"type": "partial", "text": "Supervised learning is...", "session_id": "uuid"}
+
+✅ Final Response
+
+{
+  "type": "final",
+  "reply": "Supervised learning is a method where models are trained using labeled data.",
+  "session_id": "uuid",
+  "audio_b64": "<base64-wav>",
+  "content_type": "audio/wav"
+}
+
+✅ Error
+
+{"error": "Something went wrong.", "session_id": "uuid"}
+
+===================================================
+5️⃣ GENERAL NOTES
+	•	All timestamps follow ISO 8601 format.
+	•	All secure endpoints require Authorization: Bearer <access_token>.
+	•	WebSocket should handle partial messages for streaming AI replies.
+	•	Each user can maintain multiple chat sessions.
+	•	When starting a new chat, call POST /api/sessions/ and use the returned session_id for context.
+
+===================================================
+6️⃣ JWT FLOW SUMMARY
+	1.	Register → /api/accounts/register/
+	2.	Login → /api/accounts/login/ → returns access + refresh
+	3.	Use APIs → send Authorization: Bearer <access>
+	4.	When expired → /api/token/refresh/ with refresh token
+	5.	Logout → /api/logout/ to blacklist token
+
+===================================================
+CONTACT
+
+For questions, contact backend developer: Shubham Todkar
+📧 Email: setodkar6@gmail.com
+
+---
+
+Would you like me to also generate a **frontend API reference table (endpoint → method → purpose)** at the top of this doc for easier navigation? It’s often very useful for frontend integration.
+
+
+Module
+Endpoint
+Method
+Description
+Auth
+/api/accounts/register/
+POST
+Create user
+Chat
+/ws/chat/
+WS
+Chat WebSocket
+Resources
+/api/resources/add/
+POST
+Add resource
+Homework
+/api/homework/upload/
+POST
+Upload homework
+Homework
+/api/homework/<id>/feedback/
+GET
+Get AI feedback
+Quiz
+/api/quiz/generate/
+POST
+Generate quiz
+Quiz
+/api/quiz/submit/
+POST
+Submit and score
+Progress
+/api/progress/
+GET
+Student progress summary
+Recommendations
+/api/recommendations/
+GET
+Personalized resource suggestions
+Reports
+/api/reports/weekly/
+GET
+Get parent report summary
+
+
+===================================================
+QUIZ MANAGEMENT (AI Adaptive System)
+===================================================
+
+1️⃣ Generate Quiz
+Endpoint: POST /api/quiz/generate/
+Headers: Authorization: Bearer <access_token>
+Request JSON:
+{
+  "subject": "Mathematics",
+  "topic": "Fractions"
+}
+Response:
+{
+  "quiz_id": 5,
+  "questions": [
+    {"q": "What is 1/2 + 1/4?", "options": ["1/4", "3/4", "1/2", "1"], "correct": "3/4"}
+  ]
+}
+
+2️⃣ Submit Quiz
+Endpoint: POST /api/quiz/<quiz_id>/submit/
+Request JSON:
+{
+  "answers": ["3/4", "1/2"]
+}
+Response:
+{
+  "score": 80.0,
+  "feedback": "Good progress, revise Fractions.",
+  "correct": ["Addition of fractions"],
+  "wrong": ["Subtraction of fractions"]
+}
+
+✅ AI analyzes performance, updates `Progress` dynamically, and passes learning data back to RAG context for personalized tutoring.

@@ -1,88 +1,149 @@
-import json
-import asyncio
+# backend/chatbot/consumers.py
 import logging
-logging.basicConfig(level=logging.INFO)
-from channels.generic.websocket import AsyncWebsocketConsumer
+from urllib.parse import parse_qs
+
 from asgiref.sync import sync_to_async
-from .utils import generate_stream_with_context, get_embedding
-from .vector_store import get_student_collection
-from .models import ChatHistory
+from channels.generic.websocket import AsyncJsonWebsocketConsumer
+from django.contrib.auth.models import AnonymousUser
+from django.utils import timezone
+
+from rest_framework_simplejwt.tokens import AccessToken, TokenError
+
+from .models import ChatSession, ChatMessage, ChatHistory
+from core.ai_manager import ai_generate
 from .tts import synthesize_text
-from django.contrib.auth import get_user_model
 
-class ChatConsumer(AsyncWebsocketConsumer):
+logger = logging.getLogger(__name__)
+
+
+class ChatConsumer(AsyncJsonWebsocketConsumer):
+    """
+    WebSocket consumer that supports:
+    - Optional JWT auth via ?token=<access_token>
+    - Session-aware chat (create/use ChatSession)
+    - RAG-backed AI via core.ai_manager.ai_generate
+    - Optional TTS -> base64 WAV
+    - Structured messages: status, partial, final, error
+    """
+
     async def connect(self):
-        try:
-            self.user = self.scope.get("user")
-            # Unwrap LazyObject if needed
-            if hasattr(self.user, "_wrapped") and hasattr(self.user._wrapped, "id"):
-                self.user = self.user._wrapped
-            await self.accept()
-            logging.info(f"✅ WebSocket connected: {self.user}")
-            await self.send(text_data=json.dumps({"message": "Connected to AI Chatbot!"}))
-        except Exception as e:
-            logging.error(f"❌ Connection error: {e}", exc_info=True)
+        self.user = await self._get_user_from_token()
+        await self.accept()
+        uname = getattr(self.user, "username", "AnonymousUser")
+        logger.info(f"✅ WebSocket connected: {uname}")
+        await self.send_json({"message": "Connected to AI Chatbot!"})
 
-    async def disconnect(self, close_code):
+    async def receive_json(self, content, **kwargs):
+        """
+        Expected payload:
+        {
+          "message": "Explain supervised learning.",
+          "session_id": "uuid-string",   # optional
+          "subject": "Mathematics",      # optional
+          "tts": true                    # optional
+        }
+        """
         try:
-            logging.info(f"🔌 Disconnected user: {self.scope.get('user')} | Code: {close_code}")
-        except Exception as e:
-            logging.error(f"⚠️ Error during disconnect: {e}", exc_info=True)
-
-    async def receive(self, text_data=None, bytes_data=None):
-        try:
-            if not text_data:
-                await self.send(text_data=json.dumps({"error": "Only JSON text messages are supported."}))
+            text = (content.get("message") or "").strip()
+            if not text:
+                await self.send_json({"error": "Empty message."})
                 return
 
-            data = json.loads(text_data)
-            query = data.get("message", "").strip()
-            want_tts = bool(data.get("tts") or data.get("voice"))
-            from django.contrib.auth import get_user_model
-            User = get_user_model()
+            session_id = content.get("session_id")
+            subject = content.get("subject")
+            tts_flag = bool(content.get("tts", False))
 
-            user = self.scope.get("user")
-            if hasattr(user, "_wrapped") and hasattr(user._wrapped, "id"):
-                user = user._wrapped  # unwrap LazyObject
+            session = await self._get_or_create_session(session_id)
 
-            student_id = str(user.id) if user and getattr(user, "is_authenticated", False) else "guest"
+            # store user message if authenticated
+            if not isinstance(self.user, AnonymousUser):
+                await sync_to_async(ChatMessage.objects.create)(
+                    session=session, sender="user", content=text
+                )
 
-            if not query:
-                await self.send(text_data=json.dumps({"error": "Empty message."}))
-                return
-
-            await self.send(text_data=json.dumps({"type": "status", "value": "typing"}))
-            logging.info(f"🧠 Generating response for: {query}")
-
-            chunks, full_answer = await sync_to_async(generate_stream_with_context)(student_id, query, user)
-            for part in chunks:
-                if part.strip():
-                    await self.send(text_data=json.dumps({"type": "partial", "text": part}))
-                    await asyncio.sleep(0)
-
-            payload = {"type": "final", "reply": full_answer}
-
-            if want_tts and full_answer.strip():
-                try:
-                    audio_b64 = await sync_to_async(synthesize_text)(full_answer)
-                    if audio_b64:
-                        payload.update({"audio_b64": audio_b64, "content_type": "audio/wav"})
-                except Exception as e:
-                    logging.error(f"🎤 TTS generation failed: {e}")
-                    payload["tts_error"] = str(e)
-
-            await self.send(text_data=json.dumps(payload))
-
-            if user and getattr(user, "is_authenticated", False):
-                await sync_to_async(ChatHistory.objects.create)(user=user, question=query, answer=full_answer)
-            student_collection = await sync_to_async(get_student_collection)(student_id)
-            emb = await sync_to_async(get_embedding)(query)
-            await sync_to_async(student_collection.add)(
-                documents=[f"Q: {query}\nA: {full_answer}"],
-                embeddings=[emb],
-                ids=[f"chat_{student_id}"]
+            await self.send_json(
+                {"type": "status", "value": "typing", "session_id": str(session.id)}
             )
 
+            student_id = getattr(self.user, "id", None)
+            reply = await sync_to_async(ai_generate)(
+                student_id, text, mode="chat", subject=subject
+            )
+
+            # optional "partial" teaser (simulated)
+            if isinstance(reply, str) and len(reply) > 160:
+                await self.send_json(
+                    {
+                        "type": "partial",
+                        "text": reply[:160] + "...",
+                        "session_id": str(session.id),
+                    }
+                )
+
+            audio_b64 = None
+            content_type = None
+            if tts_flag:
+                try:
+                    audio_b64 = await sync_to_async(synthesize_text)(reply)
+                    content_type = "audio/wav"
+                except Exception as e:
+                    logger.error(f"🎤 TTS generation failed: {e}")
+                    await self.send_json({"type": "warning", "tts_error": str(e)})
+
+            # store assistant & flat history if authenticated
+            if not isinstance(self.user, AnonymousUser):
+                await sync_to_async(ChatMessage.objects.create)(
+                    session=session, sender="assistant", content=reply
+                )
+                await sync_to_async(ChatHistory.objects.create)(
+                    user=self.user, question=text, answer=reply, created_at=timezone.now()
+                )
+
+            payload = {"type": "final", "reply": reply, "session_id": str(session.id)}
+            if audio_b64:
+                payload.update({"audio_b64": audio_b64, "content_type": content_type})
+            await self.send_json(payload)
+
         except Exception as e:
-            logging.error(f"❌ WebSocket internal error: {e}", exc_info=True)
-            await self.send(text_data=json.dumps({"error": f"Internal server error: {str(e)}"}))
+            logger.exception("❌ WebSocket internal error")
+            await self.send_json({"error": f"Internal error: {e}"})
+
+    async def disconnect(self, close_code):
+        uname = getattr(self.user, "username", "AnonymousUser")
+        logger.info(f"🔌 WebSocket disconnected ({close_code}): {uname}")
+
+    async def _get_user_from_token(self):
+        """Authenticate via ?token=<access> in querystring; else AnonymousUser."""
+        try:
+            query = parse_qs(self.scope.get("query_string", b"").decode())
+            token = (query.get("token") or [None])[0]
+            if not token:
+                return AnonymousUser()
+            token = token.strip().lstrip("<").rstrip(">")
+            access = AccessToken(token)
+            user_id = access.get("user_id")
+            if not user_id:
+                return AnonymousUser()
+            from django.contrib.auth import get_user_model
+
+            User = get_user_model()
+            user = await sync_to_async(User.objects.get)(id=user_id)
+            return user
+        except (TokenError, Exception) as e:
+            logger.warning(f"JWT auth failed: {e}")
+            return AnonymousUser()
+
+    async def _get_or_create_session(self, session_id):
+        """Return ChatSession; create new if missing/invalid."""
+        try:
+            if session_id:
+                session = await sync_to_async(ChatSession.objects.get)(id=session_id)
+                return session
+        except ChatSession.DoesNotExist:
+            pass
+
+        kwargs = {"title": "New Chat Session"}
+        if not isinstance(self.user, AnonymousUser):
+            kwargs["user"] = self.user
+        session = await sync_to_async(ChatSession.objects.create)(**kwargs)
+        return session

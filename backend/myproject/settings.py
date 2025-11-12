@@ -53,7 +53,13 @@ INSTALLED_APPS = [
 
     # Local apps
     'accounts',
-    'chatbot'
+    'chatbot',
+    'resources',
+    'homework',
+    'quiz',
+    'progress',
+    'reports',
+    'recommendations',
 ]
 
 MIDDLEWARE = [
