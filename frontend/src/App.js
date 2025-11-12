@@ -1,28 +1,31 @@
-import { BrowserRouter, Switch, Route, Link } from "react-router-dom";
-import Register from "./Register";
-import Login from "./Login";
+import React from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
-export default function App() {
-  return (
-    <BrowserRouter>
-      <Switch>
+// Import your pages
+import Index from "./pages/Index";
+import Register from "./pages/Register";
+import Login from "./pages/Login";
+import Dashboard from "./pages/Dashboard";
+import Chatbot from "./pages/Chatbot"; // <-- 1. IMPORT THE NEW CHATBOT PAGE
 
-        <Route exact path="/">
-          <div className="container">
-            <h1 className="title">AI Tutor</h1>
-            <h2 className="quote">“Study like you're going to live forever.”</h2>
+// This imports your main style.css
+import "./style.css"; 
 
-            <div className="btn-box">
-              <Link to="/register"><button className="btn">Register</button></Link>
-              <Link to="/login"><button className="btn">Login</button></Link>
-            </div>
-          </div>
-        </Route>
+function App() {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/dashboard" element={<Dashboard />} /> 
+        
+        {/* 2. ADD THE ROUTE FOR THE CHATBOT */}
+        <Route path="/chatbot" element={<Chatbot />} /> 
 
-        <Route path="/register" component={Register} />
-        <Route path="/login" component={Login} />
-
-      </Switch>
-    </BrowserRouter>
-  );
+      </Routes>
+    </Router>
+  );
 }
+
+export default App;
