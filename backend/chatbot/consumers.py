@@ -35,6 +35,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
 
     async def receive_json(self, content, **kwargs):
         """
+        Enhanced: Support text streaming and optional TTS audio, timestamps, and latency logging.
         Expected payload:
         {
           "message": "Explain supervised learning.",
@@ -43,6 +44,8 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
           "tts": true                    # optional
         }
         """
+        import time
+        from datetime import datetime
         try:
             text = (content.get("message") or "").strip()
             if not text:
@@ -62,33 +65,77 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
                 )
 
             await self.send_json(
-                {"type": "status", "value": "typing", "session_id": str(session.id)}
+                {
+                    "type": "status",
+                    "value": "typing",
+                    "session_id": str(session.id),
+                    "timestamp": datetime.utcnow().isoformat() + "Z",
+                }
             )
 
             student_id = getattr(self.user, "id", None)
-            reply = await sync_to_async(ai_generate)(
-                student_id, text, mode="chat", subject=subject
-            )
+            start_ts = time.time()
+            ai_latency = None
+            reply = None
+            error_reply = None
+            # AI generation with latency/error handling
+            try:
+                reply = await sync_to_async(ai_generate)(
+                    student_id, text, mode="chat", subject=subject
+                )
+                ai_latency = time.time() - start_ts
+            except Exception as e:
+                ai_latency = time.time() - start_ts
+                logger.error(f"AI generation failed: {e}")
+                error_reply = f"AI error: {e}"
+                reply = error_reply
 
-            # optional "partial" teaser (simulated)
+            # Stream text as partial/final messages
+            now_iso = datetime.utcnow().isoformat() + "Z"
+            # Simulate streaming: send a "partial" if reply is long, else just "final"
             if isinstance(reply, str) and len(reply) > 160:
                 await self.send_json(
                     {
                         "type": "partial",
                         "text": reply[:160] + "...",
                         "session_id": str(session.id),
+                        "timestamp": now_iso,
                     }
                 )
+            # Always send final message with full text and latency/timestamp
+            final_payload = {
+                "type": "final",
+                "reply": reply,
+                "session_id": str(session.id),
+                "timestamp": now_iso,
+                "latency_ms": int(ai_latency * 1000) if ai_latency is not None else None,
+            }
+            await self.send_json(final_payload)
 
-            audio_b64 = None
-            content_type = None
-            if tts_flag:
+            # If TTS requested, synthesize and send audio as a separate message
+            if tts_flag and reply and not error_reply:
                 try:
+                    tts_start = time.time()
                     audio_b64 = await sync_to_async(synthesize_text)(reply)
-                    content_type = "audio/wav"
+                    tts_latency = time.time() - tts_start
+                    tts_payload = {
+                        "type": "tts",
+                        "audio_b64": audio_b64,
+                        "content_type": "audio/wav",
+                        "session_id": str(session.id),
+                        "timestamp": datetime.utcnow().isoformat() + "Z",
+                        "tts_latency_ms": int(tts_latency * 1000),
+                    }
+                    await self.send_json(tts_payload)
                 except Exception as e:
                     logger.error(f"🎤 TTS generation failed: {e}")
-                    await self.send_json({"type": "warning", "tts_error": str(e)})
+                    await self.send_json(
+                        {
+                            "type": "warning",
+                            "tts_error": str(e),
+                            "timestamp": datetime.utcnow().isoformat() + "Z",
+                        }
+                    )
 
             # store assistant & flat history if authenticated
             if not isinstance(self.user, AnonymousUser):
@@ -99,14 +146,14 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
                     user=self.user, question=text, answer=reply, created_at=timezone.now()
                 )
 
-            payload = {"type": "final", "reply": reply, "session_id": str(session.id)}
-            if audio_b64:
-                payload.update({"audio_b64": audio_b64, "content_type": content_type})
-            await self.send_json(payload)
-
         except Exception as e:
             logger.exception("❌ WebSocket internal error")
-            await self.send_json({"error": f"Internal error: {e}"})
+            await self.send_json(
+                {
+                    "error": f"Internal error: {e}",
+                    "timestamp": datetime.utcnow().isoformat() + "Z",
+                }
+            )
 
     async def disconnect(self, close_code):
         uname = getattr(self.user, "username", "AnonymousUser")
