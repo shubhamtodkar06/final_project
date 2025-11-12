@@ -161,75 +161,91 @@ All API requests (except registration and login) require authentication using JW
 
 ## 2️⃣ CHAT MODULE (REST + WebSocket)
 
+### WebSocket & REST Hybrid Chatbot API
+
+This chatbot supports a **hybrid mode**: use the WebSocket (`/ws/chat/`) for real-time, streaming chat and TTS, while all session/message management is handled via REST endpoints (`/api/chatbot/sessions/`). If WebSocket is unavailable (e.g., network issues), you can fall back to the REST endpoints for basic chat.
+
+#### WebSocket Event Types Summary
+
+| Event Type | Description                      | Example Payload (server → client)                       |
+|------------|----------------------------------|---------------------------------------------------------|
+| `status`   | Typing/status indicator          | `{ "type": "status", "value": "typing", "session_id": "uuid" }` |
+| `partial`  | Partial/streamed text response   | `{ "type": "partial", "text": "Supervised...", "session_id": "uuid" }` |
+| `final`    | Final full AI response           | `{ "type": "final", "reply": "Full answer...", "session_id": "uuid", "latency_ms": 900 }` |
+| `tts`      | TTS audio (base64 WAV)           | `{ "type": "tts", "audio_b64": "<b64>", "content_type": "audio/wav", "session_id": "uuid" }` |
+| `error`    | Error message                    | `{ "type": "error", "error": "Something went wrong.", "session_id": "uuid" }` |
+
+**Frontend Tip:** Listen for these event types to update UI. `partial` is optional (sent for long answers), `tts` is only sent if requested.
+
+---
+
 ### Chat Session Management (REST)
+
+**All endpoints require:** `Authorization: Bearer <access_token>`
 
 #### List All Sessions
 - **Endpoint:** `GET /api/chatbot/sessions/`
-- **Headers:** `Authorization: Bearer <access_token>`
 - **Example Response:**
-```json
-[
-  {
-    "id": "uuid-string",
-    "title": "Session 1",
-    "created_at": "2025-06-08T12:34:56Z"
-  }
-]
-```
+    ```json
+    [
+      {
+        "id": "uuid-string",
+        "title": "Session 1",
+        "created_at": "2025-06-08T12:34:56Z"
+      }
+    ]
+    ```
 
 #### Create New Session
 - **Endpoint:** `POST /api/chatbot/sessions/`
-- **Headers:** `Authorization: Bearer <access_token>`
 - **Example Request:**
-```json
-{ "title": "New Study Session" }
-```
+    ```json
+    { "title": "New Study Session" }
+    ```
 - **Example Response:**
-```json
-{
-  "id": "uuid-string",
-  "title": "New Study Session",
-  "created_at": "2025-06-08T12:34:56Z"
-}
-```
+    ```json
+    {
+      "id": "uuid-string",
+      "title": "New Study Session",
+      "created_at": "2025-06-08T12:34:56Z"
+    }
+    ```
 
 #### Retrieve or Delete Session
 - **Endpoint:** `GET /api/chatbot/sessions/<session_id>/` or `DELETE /api/chatbot/sessions/<session_id>/`
-- **Headers:** `Authorization: Bearer <access_token>`
 - **Example Response (GET):**
-```json
-{
-  "id": "uuid-string",
-  "title": "Session title",
-  "created_at": "2025-06-08T12:34:56Z"
-}
-```
+    ```json
+    {
+      "id": "uuid-string",
+      "title": "Session title",
+      "created_at": "2025-06-08T12:34:56Z"
+    }
+    ```
 - **Notes:** DELETE returns HTTP 204.
 
 #### Get All Messages in a Session
 - **Endpoint:** `GET /api/chatbot/sessions/<session_id>/messages/`
-- **Headers:** `Authorization: Bearer <access_token>`
 - **Example Response:**
-```json
-[
-  {
-    "id": 10,
-    "sender": "user",
-    "content": "What is supervised learning?",
-    "created_at": "2025-06-08T12:35:01Z"
-  },
-  {
-    "id": 11,
-    "sender": "assistant",
-    "content": "Supervised learning is a machine learning technique...",
-    "created_at": "2025-06-08T12:35:05Z"
-  }
-]
-```
+    ```json
+    [
+      {
+        "id": 10,
+        "sender": "user",
+        "content": "What is supervised learning?",
+        "created_at": "2025-06-08T12:35:01Z"
+      },
+      {
+        "id": 11,
+        "sender": "assistant",
+        "content": "Supervised learning is a machine learning technique...",
+        "created_at": "2025-06-08T12:35:05Z"
+      }
+    ]
+    ```
 
 ---
 
-### Chatbot (WebSocket)
+### Real-Time Chatbot (WebSocket)
 
 - **Endpoint:** `ws://<backend-host>/ws/chat/`
 - **Query Parameters (optional):** `session_id=<uuid>`, `token=<jwt_access_token>`
@@ -243,31 +259,47 @@ All API requests (except registration and login) require authentication using JW
 }
 ```
 
-#### Example Server → Client Responses
+#### Example Server → Client Events
+
 - **Typing Indicator**
-  ```json
-  {"type": "status", "value": "typing", "session_id": "uuid"}
-  ```
+    ```json
+    {"type": "status", "value": "typing", "session_id": "uuid"}
+    ```
 - **Partial Response**
-  ```json
-  {"type": "partial", "text": "Supervised learning is...", "session_id": "uuid"}
-  ```
+    ```json
+    {"type": "partial", "text": "Supervised learning is...", "session_id": "uuid"}
+    ```
 - **Final Response**
-  ```json
-  {
-    "type": "final",
-    "reply": "Supervised learning is a method where models are trained using labeled data.",
-    "session_id": "uuid",
-    "audio_b64": "<base64-wav>",
-    "content_type": "audio/wav"
-  }
-  ```
+    ```json
+    {
+      "type": "final",
+      "reply": "Supervised learning is a method where models are trained using labeled data.",
+      "session_id": "uuid",
+      "latency_ms": 900
+    }
+    ```
+- **TTS Audio**
+    ```json
+    {
+      "type": "tts",
+      "audio_b64": "<base64-wav>",
+      "content_type": "audio/wav",
+      "session_id": "uuid"
+    }
+    ```
 - **Error**
-  ```json
-  {"error": "Something went wrong.", "session_id": "uuid"}
-  ```
-**Notes:** Use JWT token for authentication (via query param). Handles streaming, TTS, and session context.  
-**Clarification:** Live chat uses `/ws/chat/` for real-time messages, but all chat session management (create/list/delete) is handled under `/api/chatbot/`.
+    ```json
+    {"type": "error", "error": "Something went wrong.", "session_id": "uuid"}
+    ```
+
+**Hybrid Mode:**  
+If WebSocket is not available, you can POST chat messages to a REST endpoint (not shown here) and receive plain responses, but real-time events and TTS will not work.
+
+**Authentication:**  
+Pass JWT token via `?token=<access_token>` in the WebSocket URL query string.
+
+**Session Context:**  
+Pass `session_id` in your payload to continue an existing chat session, or omit to start a new one.
 
 ---
 
@@ -361,44 +393,107 @@ All API requests (except registration and login) require authentication using JW
 ## 9️⃣ STUDENT NOTES (AI NOTES)
 
 ### Overview
-AI-generated study notes can be created and listed by the student. Useful for revision or as a summary of key topics.
+AI-generated study notes help students quickly review or understand topics. Notes are contextualized using the student's progress and available resources.
 
 ### Generate AI Study Note
-- **Endpoint:** `POST /api/student_notes/`
+- **Endpoint:** `POST /api/student_notes/generate/`
 - **Headers:** `Authorization: Bearer <access_token>`
 - **Example Request:**
-```json
-{
-  "subject": "Mathematics",
-  "topic": "Fractions"
-}
-```
+    ```json
+    {
+      "subject": "Mathematics",
+      "topic": "Fractions"
+    }
+    ```
 - **Example Response:**
-```json
-{
-  "note_id": 12,
-  "subject": "Mathematics",
-  "topic": "Fractions",
-  "content": "## Fractions Explained\n- A fraction shows parts of a whole.\n- Example: 1/2 means one out of two equal parts.\n**Tip:** Practice by dividing shapes into equal parts."
-}
-```
+    ```json
+    {
+      "message": "AI study note generated successfully.",
+      "note": {
+        "id": 12,
+        "subject": "Mathematics",
+        "topic": "Fractions",
+        "ai_note": "## Fractions Explained\n- A fraction shows parts of a whole.\n- Example: 1/2 means one out of two equal parts.\n**Tip:** Practice by dividing shapes into equal parts.",
+        "created_at": "2025-06-08T12:34:56Z",
+        "source_resources": [2, 7]
+      }
+    }
+    ```
+**Notes:** The `ai_note` field is markdown-formatted. `source_resources` is a list of related resource IDs.
 
 ### List All Generated Notes
 - **Endpoint:** `GET /api/student_notes/`
 - **Headers:** `Authorization: Bearer <access_token>`
 - **Example Response:**
-```json
-[
-  {
-    "note_id": 12,
-    "subject": "Mathematics",
-    "topic": "Fractions",
-    "content": "## Fractions Explained\n- A fraction shows parts of a whole.\n- Example: 1/2 means one out of two equal parts.\n**Tip:** Practice by dividing shapes into equal parts.",
-    "created_at": "2025-06-08T12:34:56Z"
-  }
-]
-```
-**Notes:** Notes are generated using AI and stored for the student. Markdown formatting is used for headings and bullet points.
+    ```json
+    [
+      {
+        "id": 12,
+        "subject": "Mathematics",
+        "topic": "Fractions",
+        "ai_note": "## Fractions Explained\n- A fraction shows parts of a whole.\n- Example: 1/2 means one out of two equal parts.",
+        "created_at": "2025-06-08T12:34:56Z",
+        "source_resources": [2, 7]
+      }
+    ]
+    ```
+**Frontend Tip:** Render `ai_note` as markdown for headings/bullets.
+
+---
+
+## 🔟 AI RECOMMENDATIONS
+
+### Overview
+AI analyzes the student's weak topics and recommends personalized study tips and resources.
+
+### Get AI Recommendations
+- **Endpoint:** `GET /api/recommendations/ai/`
+- **Headers:** `Authorization: Bearer <access_token>`
+- **Example Response:**
+    ```json
+    {
+      "message": "Personalized recommendations generated.",
+      "weak_topics": ["Fractions", "Decimals"],
+      "ai_suggestion": "Focus on practicing fractions and decimals. Use visual aids for better understanding.",
+      "resources": [
+        {
+          "id": 17,
+          "title": "Understanding Fractions",
+          "subject": "Mathematics",
+          "grade_level": 5,
+          "uploaded_at": "2025-06-01T10:00:00Z"
+        }
+      ]
+    }
+    ```
+**Notes:** `ai_suggestion` is a string with study tips. `resources` is a list of top-matching resources.
+
+---
+
+## 1️⃣1️⃣ AI/Parent Reports
+
+### Overview
+Weekly or on-demand AI-generated reports summarize student progress for parents and students, including improvement tips.
+
+### Get Weekly Report
+- **Endpoint:** `GET /api/reports/weekly/`
+- **Headers:** `Authorization: Bearer <access_token>`
+- **Example Response:**
+    ```json
+    {
+      "student": "john_doe",
+      "summary": {
+        "summary": "John made good progress in Mathematics this week.",
+        "improvement_tips": [
+          "Practice more on Fractions.",
+          "Revise Decimals.",
+          "Try at least one quiz per week."
+        ]
+      },
+      "context_used": "Subject: Mathematics, Avg: 85, Weak: ['Fractions'], Strong: ['Multiplication']"
+    }
+    ```
+**Notes:** The `summary` field is a JSON object with a short summary and a list of improvement tips. `context_used` shows what data was summarized.
 
 ---
 
