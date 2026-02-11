@@ -61,13 +61,31 @@ def get_student_memory(student_id):
 # ======================================================
 # ⭐ FILTER RESOLUTION ENGINE
 # ======================================================
-def resolve_filters(filters):
-    if not filters:
+def resolve_filters(student, filters=None):
+    """
+    Resolve learning filters using FilterResolver.
+    Returns metadata filter for Chroma retriever.
+    """
+
+    if not student:
         return None
 
     try:
-        resolver = FilterResolver(filters)
-        return resolver.build_metadata_filter()
+        resolved = FilterResolver.resolve(student, filters)
+
+        subjects = resolved.get("subjects", [])
+        topics = resolved.get("topics", [])
+
+        metadata_filter = {}
+
+        if subjects:
+            metadata_filter["subject"] = {"$in": subjects}
+
+        if topics:
+            metadata_filter["topic"] = {"$in": topics}
+
+        return metadata_filter if metadata_filter else None
+
     except Exception as e:
         logger.warning(f"Filter resolution failed: {e}")
         return None

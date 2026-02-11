@@ -4,6 +4,10 @@ from progress.suggestion_engine import suggest_topics
 
 def build_homework_context(student, filters):
 
+    # Safety: ensure filters is dict
+    if not isinstance(filters, dict):
+        filters = {}
+
     suggestions = suggest_topics(
         student,
         filters.get("subjects", [])

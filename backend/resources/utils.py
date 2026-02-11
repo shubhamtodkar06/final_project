@@ -14,23 +14,71 @@ logger = logging.getLogger(__name__)
 # Load embedding model once
 embedding_model = SentenceTransformer('all-mpnet-base-v2')
 
-def extract_text_from_file(file_path):
-    """Extract text from uploaded image or PDF."""
+def extract_text_from_file(file):
+    """
+    Extract text from uploaded homework files.
+
+    Supports:
+    ✔ Text files
+    ✔ Images via OCR
+    ✔ PDF text extraction
+    ✔ OCR fallback for scanned PDFs
+    """
+
+    content_type = getattr(file, "content_type", "") or ""
+    logger.info(
+        f"🔍 Starting file extraction | filename={getattr(file, 'name', None)} | content_type={content_type}"
+    )
+
     try:
-        ext = os.path.splitext(file_path)[1].lower()
-        text = ""
-        if ext in ['.png', '.jpg', '.jpeg']:
-            text = pytesseract.image_to_string(Image.open(file_path))
-        elif ext == '.pdf':
-            images = convert_from_path(file_path)
-            for img in images:
-                text += pytesseract.image_to_string(img)
-        else:
-            logger.warning(f"Unsupported file type: {ext}")
-        return text.strip()
+        # ---------- TEXT FILE ----------
+        if content_type.startswith("text"):
+            file.seek(0)
+            text = file.read().decode("utf-8", errors="ignore")
+            logger.info("✅ Text file extracted successfully")
+            return text.strip()
+
+        # ---------- IMAGE OCR ----------
+        if content_type.startswith("image"):
+            file.seek(0)
+            image = Image.open(file)
+            text = pytesseract.image_to_string(image)
+            logger.info("✅ Image OCR completed")
+            return text.strip()
+
+        # ---------- PDF ----------
+        if content_type == "application/pdf":
+            file.seek(0)
+            extracted_text = ""
+
+            import pdfplumber
+            with pdfplumber.open(file) as pdf:
+                logger.info(f"📄 PDF opened | pages={len(pdf.pages)}")
+                for page in pdf.pages:
+                    text = page.extract_text()
+                    if text:
+                        extracted_text += text + "\n"
+
+            # --- OCR fallback for scanned PDF ---
+            if not extracted_text.strip():
+                logger.info("📄 PDF text empty. Using OCR fallback.")
+
+                file.seek(0)
+
+                with pdfplumber.open(file) as pdf:
+                    for page in pdf.pages:
+                        image = page.to_image(resolution=300).original
+                        extracted_text += pytesseract.image_to_string(image)
+
+            logger.info("✅ PDF extraction completed")
+            return extracted_text.strip()
+
+        logger.warning(f"⚠️ Unsupported file type: {content_type}")
+        raise ValueError("Unsupported file type for OCR")
+
     except Exception as e:
-        logger.error(f"Error during OCR: {e}")
-        return ""
+        logger.error(f"❌ File extraction failed: {e}")
+        raise
 
 def generate_embeddings(text):
     """Generate vector embeddings for text content."""
