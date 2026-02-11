@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     'reports',
     'recommendations',
     'student_notes',
+    'core',
 ]
 
 MIDDLEWARE = [
@@ -146,58 +147,27 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
-    "ROTATE_REFRESH_TOKENS": True,
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    "ROTATE_REFRESH_TOKENS": False,
     "BLACKLIST_AFTER_ROTATION": True,
-    "AUTH_HEADER_TYPES": ("Bearer",),
 }
-
 # ----------------------------------------------------------------------
-# Channels Configuration
+# Email Configuration (Gmail SMTP)
 # ----------------------------------------------------------------------
-import logging
-try:
-    import redis
-except ImportError:
-    redis = None
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 
-def _redis_available():
-    if redis is None:
-        logging.warning("⚠️ Redis Python client not installed, using in-memory channel layer.")
-        return False
-    try:
-        r = redis.Redis(host="127.0.0.1", port=6379)
-        r.ping()
-        return True
-    except Exception as e:
-        logging.warning(f"⚠️ Redis not available, using in-memory channel layer: {e}")
-        return False
+EMAIL_HOST = "smtp.gmail.com"
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
 
-if _redis_available():
-    CHANNEL_LAYERS = {
-        "default": {
-            "BACKEND": "channels_redis.core.RedisChannelLayer",
-            "CONFIG": {"hosts": [("127.0.0.1", 6379)]},
-        }
-    }
-else:
-    CHANNEL_LAYERS = {
-        "default": {
-            "BACKEND": "channels.layers.InMemoryChannelLayer",
-        }
-    }
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 
-# ----------------------------------------------------------------------
-# CORS Configuration
-# ----------------------------------------------------------------------
-CORS_ALLOW_ALL_ORIGINS = DEBUG
-CORS_ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "http://127.0.0.1:3000,http://localhost:3000").split(",")
+if not EMAIL_HOST_USER or not EMAIL_HOST_PASSWORD:
+    raise ValueError(
+        "EMAIL_HOST_USER or EMAIL_HOST_PASSWORD not found. "
+        "Please set Gmail SMTP credentials in environment variables."
+    )
 
-
-# ----------------------------------------------------------------------
-# Development-only MIME type fix for JS files
-# ----------------------------------------------------------------------
-if DEBUG:
-    import mimetypes
-    mimetypes.add_type("application/javascript", ".js", True)
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER

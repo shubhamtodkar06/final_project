@@ -19,6 +19,18 @@ class IngestResourceView(APIView):
         grade_level = request.data.get("grade_level", 0)
         file = request.FILES.get("file")
 
+        if not content and not file:
+            return Response(
+                {"error": "Either content or file must be provided."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if not title or not subject or not grade_level:
+            return Response(
+                {"error": "title, subject, and grade_level are required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         resource = ingest_resource(
             user=user,
             title=title,

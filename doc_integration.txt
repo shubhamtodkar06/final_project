@@ -8,7 +8,7 @@ All API requests (except registration and login) require authentication using JW
 
 ---
 
-## 🚦 Frontend API Reference Table
+##  Frontend API Reference Table
 
 | Module           | Endpoint                                      | Method | Purpose/Description                               |
 |------------------|-----------------------------------------------|--------|---------------------------------------------------|
@@ -24,7 +24,7 @@ All API requests (except registration and login) require authentication using JW
 | Chat (REST)      | `/api/chatbot/sessions/<session_id>/messages/`| GET    | List all messages in a session                    |
 | Chat (WebSocket) | `/ws/chat/`                                   | WS     | Real-time chatbot (streaming, TTS, status, etc.)  |
 | Resources        | `/api/resources/add/`                         | POST   | Add (ingest) new resource to knowledge base       |
-| Homework         | `/api/homework/submit/`                       | POST   | Submit homework (text or file)                    |
+| Homework         | `/api/homework/submit/`                       | POST   | Submit homework as text or file (TXT, Image, PDF with OCR support) |
 | Quiz             | `/api/quiz/generate/`                         | POST   | Generate quiz based on subject/topic              |
 | Quiz             | `/api/quiz/<quiz_id>/submit/`                 | POST   | Submit quiz answers                               |
 | Progress         | `/api/progress/`                              | GET    | Get all progress records for student              |
@@ -35,6 +35,7 @@ All API requests (except registration and login) require authentication using JW
 | Progress         | `/api/progress/analytics/deep/`               | GET    | Advanced analytics (leaderboard, readiness, etc.) |
 | Recommendations  | `/api/recommendations/ai/`                    | GET    | Get AI-powered study tips & resource suggestions  |
 | Reports          | `/api/reports/weekly/`                        | GET    | Get weekly parent/student report                  |
+| Reports          | `/api/reports/send-to-parent/`                | POST   | Send AI-generated analytical progress report to parent email |
 
 ---
 
@@ -672,6 +673,1870 @@ Weekly or on-demand AI-generated reports summarize student progress for parents 
 
 ---
 
-## CONTACT
-For questions, contact backend developer: Shubham Todkar  
-📧 Email: setodkar6@gmail.com
+## Reports Module
+
+### Weekly Report
+Endpoint: GET /api/reports/weekly/
+Authentication: JWT required
+
+Description:
+Returns an AI-generated weekly academic progress summary
+for the logged-in student.
+
+### Send Report to Parent
+Endpoint: POST /api/reports/send-to-parent/
+Authentication: JWT required
+
+Request Body:
+{
+  "parent_email": "parent@example.com"
+}
+
+Description:
+Generates an AI-based analytical progress report using
+student performance data and sends it directly to the
+parent’s email address via Gmail SMTP.
+
+Response (Success):
+{
+  "message": "Progress report sent successfully to parent.",
+  "sent_to": "parent@example.com"
+}
+
+Notes:
+- This API is triggered manually from the frontend (button click).
+- Email credentials are securely fetched from environment variables.
+- Improves parent involvement and transparency.
+
+## Homework Module
+
+### Submit Homework
+Endpoint: POST /api/homework/submit/
+Authentication: JWT required
+
+Request (Text-based):
+{
+  "subject": "Mathematics",
+  "text_content": "Solve the given problems..."
+}
+
+Request (File-based):
+- Content-Type: multipart/form-data
+- Fields:
+  - subject: string
+  - file: .txt / .jpg / .png / .pdf
+
+Description:
+Allows students to submit homework as plain text or uploaded files.
+For image files and scanned PDF uploads, OCR (Optical Character Recognition)
+is used to extract textual content before AI-based evaluation.
+
+Response (Success):
+{
+  "message": "Homework submitted and evaluated.",
+  "homework_id": 12,
+  "feedback": "Good attempt. Revise algebraic expressions.",
+  "score": 78.5
+}
+
+Notes:
+- OCR is implemented using Tesseract.
+- Extracted text is evaluated using a Generative AI model.
+- Homework scores automatically update student progress.
+
+## Homework Module
+
+### Submit Homework
+Endpoint: POST /api/homework/submit/
+Authentication: JWT required
+
+Request (Text-based):
+{
+  "subject": "Mathematics",
+  "text_content": "Solve the given problems..."
+}
+
+Request (File-based):
+- Content-Type: multipart/form-data
+- Fields:
+  - subject: string
+  - file: .txt / .jpg / .png / .pdf
+
+Description:
+Allows students to submit homework as plain text or uploaded files.
+For image files and scanned PDF uploads, OCR (Optical Character Recognition)
+is used to extract textual content before AI-based evaluation.
+
+Response (Success):
+{
+  "message": "Homework submitted and evaluated.",
+  "homework_id": 12,
+  "feedback": "Good attempt. Revise algebraic expressions.",
+  "score": 78.5
+}
+
+Notes:
+- OCR is implemented using Tesseract.
+- Extracted text is evaluated using a Generative AI model.
+- Homework scores automatically update student progress.
+
+
+=========================
+Frontend Integration Guide
+=========================
+
+This document provides API endpoints and integration details for authentication,
+AI chatbot interaction (REST + WebSocket), homework evaluation, quizzes,
+student progress analytics, personalized recommendations, AI-generated
+study strategies, notes management, and reports for the
+AI-Powered Personalized Learning Platform.
+
+All APIs (except registration and login) require JWT authentication.
+
+====================================================================
+
+## 🔹 Frontend API Reference Table
+
+| Module            | Endpoint                                          | Method | Description |
+|------------------|---------------------------------------------------|--------|-------------|
+| Auth             | /api/auth/register/                               | POST   | Register new user |
+| Auth             | /api/auth/login/                                  | POST   | Login and receive JWT tokens |
+| Auth             | /api/auth/profile/                                | GET    | Get logged-in user profile |
+| Auth             | /api/auth/token/refresh/                          | POST   | Refresh access token |
+| Auth             | /api/auth/logout/                                 | POST   | Logout and blacklist token |
+| Chat (REST)      | /api/chatbot/chat/                                | POST   | General AI chatbot (global scope) |
+| Chat (WebSocket) | /ws/chat/                                         | WS     | Real-time chatbot (streaming, TTS) |
+| Homework         | /api/homework/submit/                             | POST   | Submit homework (text / image / PDF with OCR) |
+| Quiz             | /api/quiz/generate/                               | POST   | Generate quiz (subject/topic-based) |
+| Quiz             | /api/quiz/<quiz_id>/submit/                       | POST   | Submit quiz answers |
+| Progress         | /api/progress/                                    | GET    | Get all progress records |
+| Progress         | /api/progress/overview/                           | GET    | Overall academic summary |
+| Progress         | /api/progress/subject/<subject>/                  | GET    | Subject-wise analytics |
+| Progress         | /api/progress/trend/                              | GET    | Progress trend analysis |
+| Progress         | /api/progress/analytics/deep/                     | GET    | Deep performance insights |
+| Student Notes    | /api/student_notes/global/                        | GET    | Notes based on student grade (global) |
+| Student Notes    | /api/student_notes/subject/<subject>/             | GET    | Subject-wise notes |
+| Student Notes    | /api/student_notes/topic/<subject>/<topic>/       | GET    | Topic-wise notes |
+| Recommendations  | /api/recommendations/ai/                          | GET    | AI learning recommendations |
+| Study Strategy   | /api/recommendations/study-plan/                  | GET    | AI-generated weekly study strategy |
+| Reports          | /api/reports/weekly/                              | GET    | Weekly AI progress report |
+| Reports          | /api/reports/send-to-parent/                      | POST   | Send analytical progress report to parent email |
+
+====================================================================
+
+## 🔹 Authentication
+
+All protected APIs require JWT authentication.
+
+Add the following header to each request:
+
+Authorization:
+Bearer <access_token>
+
+====================================================================
+
+## 🔹 AI Architecture Overview (RAG + Scope-Based Intelligence)
+
+The platform uses **Retrieval-Augmented Generation (RAG)** to ensure accurate,
+context-aware, and syllabus-aligned AI responses.
+
+Instead of relying only on the language model, the system retrieves
+relevant academic data before generating responses.
+
+--------------------------------------------------------------------
+
+### 🔸 Scope-Based AI Design
+
+AI behavior is controlled using explicit scopes to avoid mixing data
+across grades, subjects, and topics.
+
+| Scope    | Description |
+|--------|-------------|
+| Global | Uses grade-level notes, overall progress, and general resources |
+| Subject | Uses subject-specific notes, progress, and resources |
+| Topic | Uses topic-specific notes, weak/strong topics, and focused resources |
+
+--------------------------------------------------------------------
+
+### 🔸 Scope Usage by Feature
+
+- Chatbot → Global scope
+- Quiz → Topic or Subject scope
+- Homework Evaluation → Subject scope
+- Notes Generation → Subject or Topic scope
+- Study Strategy Generator → Global + Subject scope
+- Reports → Global scope
+
+====================================================================
+
+## 🔹 Knowledge Sources Used by AI
+
+The AI retrieves information from multiple structured sources:
+
+- Admin-provided syllabus notes
+- AI-generated personalized notes
+- Curated learning resources (PDFs, articles, videos)
+- Student performance analytics (scores, weak topics, strong topics)
+
+All content is indexed into **ChromaDB** using metadata:
+
+grade, subject, topic, source, document_type
+
+This ensures precise retrieval during AI response generation.
+
+====================================================================
+
+## 🔹 AI Weekly Study Strategy Generator
+
+### Endpoint
+GET /api/recommendations/study-plan/
+
+### Description
+Generates a personalized weekly study strategy using:
+- Student progress metrics
+- Weak and strong topics
+- Available syllabus notes and resources
+
+### Output Includes
+- Subject-wise focus plan
+- Daily study schedule (Monday–Sunday)
+- Revision and improvement strategies
+
+This feature helps students plan their studies effectively and
+improve weak areas systematically.
+
+====================================================================
+
+## 🔹 Homework Evaluation (OCR + AI)
+
+Homework submissions support:
+- Text input
+- Image upload (OCR using Tesseract)
+- PDF upload (text extraction with OCR fallback)
+
+AI automatically:
+- Evaluates homework submissions
+- Assigns scores
+- Generates constructive feedback
+- Updates student progress analytics
+
+====================================================================
+
+## 🔹 Parent Progress Report Feature
+
+### Endpoint
+POST /api/reports/send-to-parent/
+
+### Description
+Allows students to send an AI-generated analytical progress report
+directly to a parent’s email.
+
+The report includes:
+- Subject-wise performance
+- Weak and strong learning areas
+- Improvement suggestions and study guidance
+
+====================================================================
+
+## 🔹 Scalability & Security
+
+- Django REST Framework with JWT authentication
+- Real-time communication using Django Channels (WebSockets)
+- PostgreSQL for structured relational data
+- ChromaDB for semantic search and RAG
+- Modular, scalable backend architecture
+
+====================================================================
+
+## ✅ Final Notes
+
+This document reflects the **final backend integration guide** and is fully
+aligned with:
+- Project objectives
+- AI-powered personalized learning goals
+- Final-year academic submission standards
+AI-Powered Personalized Learning Platform – Frontend Integration & API Specification
+===================================================================================
+
+This document provides a comprehensive guide for integrating the frontend with the AI-powered personalized learning platform. It covers all REST API and WebSocket endpoints, authentication, usage patterns, and example payloads for each major module: authentication, resource ingestion, chat/chatbot (REST + WebSocket), homework, quiz, progress analytics, recommendations, and reports.
+
+**All API requests (except registration and login) require JWT authentication.**
+
+---
+
+## Table of Contents
+
+1. [Authentication (JWT)](#authentication-jwt)
+2. [Resource Ingestion](#resource-ingestion)
+3. [Chatbot (REST & WebSocket)](#chatbot-rest--websocket)
+4. [Homework Submission & Feedback](#homework-submission--feedback)
+5. [Quiz Generation & Submission](#quiz-generation--submission)
+6. [Student Progress & Analytics](#student-progress--analytics)
+7. [AI Recommendations](#ai-recommendations)
+8. [Reports (Weekly & Parent)](#reports-weekly--parent)
+9. [Error Handling & Status Codes](#error-handling--status-codes)
+10. [Appendix: Example JSON Structures](#appendix-example-json-structures)
+
+---
+
+## Authentication (JWT)
+
+**Endpoints:**
+
+| Endpoint                    | Method | Description                   |
+|-----------------------------|--------|-------------------------------|
+| `/api/auth/register/`       | POST   | Register new user             |
+| `/api/auth/login/`          | POST   | Obtain JWT tokens             |
+| `/api/auth/profile/`        | GET    | Get current user's profile    |
+| `/api/auth/token/refresh/`  | POST   | Refresh access token          |
+| `/api/auth/logout/`         | POST   | Logout (blacklist token)      |
+
+**Usage:**
+- On login, receive `access` and `refresh` tokens.  
+- Include `Authorization: Bearer <access>` in all protected API requests.
+- Refresh tokens as needed.
+
+**Example:**
+```json
+POST /api/auth/login/
+{ "username": "alice", "password": "secret" }
+→
+{ "access": "...", "refresh": "...", "user": {...} }
+```
+
+---
+
+## Resource Ingestion
+
+**Endpoint:**  
+`POST /api/resources/add/`
+
+**Description:**  
+Add (ingest) a new resource to the knowledge base. Supports text, file upload (PDF, image, TXT), subject, grade, etc.
+
+**Request:**
+```json
+{
+  "title": "Introduction to Fractions",
+  "content": "Fractions represent ...",
+  "subject": "Mathematics",
+  "grade_level": 6,
+  "file": <file upload, optional>
+}
+```
+
+**Notes:**
+- File uploads (PDF/Image) are OCR-processed.
+- Embeddings are generated for RAG.
+
+---
+
+## Chatbot (REST & WebSocket)
+
+### REST Endpoints
+
+| Endpoint                                         | Method | Description                     |
+|--------------------------------------------------|--------|---------------------------------|
+| `/api/chatbot/sessions/`                         | GET    | List chat sessions              |
+| `/api/chatbot/sessions/`                         | POST   | Create new chat session         |
+| `/api/chatbot/sessions/<session_id>/`            | GET    | Retrieve chat session           |
+| `/api/chatbot/sessions/<session_id>/`            | DELETE | Delete chat session             |
+| `/api/chatbot/sessions/<session_id>/messages/`   | GET    | List all messages in a session  |
+| `/api/chatbot/chat/`                             | POST   | Send message, get AI response   |
+
+**Example (chat):**
+```json
+POST /api/chatbot/chat/
+{
+  "message": "Explain photosynthesis.",
+  "session_id": "abc-123" // optional
+}
+→
+{
+  "answer": "Photosynthesis is ...",
+  "session_id": "abc-123"
+}
+```
+
+### WebSocket Endpoint
+
+`ws://<host>/ws/chat/?token=<access_token>`
+
+**Features:**
+- Real-time chatbot (streaming, TTS, status, etc.).
+- Supports session, subject, and optional TTS audio.
+
+**Payload Example:**
+```json
+{
+  "message": "What is the Pythagorean theorem?",
+  "session_id": "abc-123", // optional
+  "subject": "Mathematics", // optional
+  "tts": true               // optional (returns base64 audio)
+}
+```
+
+**Emitted Events:**
+- `{"type": "status", "value": "typing", ...}`
+- `{"type": "partial", "text": "The Pythagorean ..."}`
+- `{"type": "final", "text": "The Pythagorean theorem states ...", "audio": "<base64>", ...}`
+- `{"type": "error", "message": "..." }`
+
+---
+
+## Homework Submission & Feedback
+
+**Endpoint:**  
+`POST /api/homework/submit/`
+
+**Description:**  
+Submit homework as text or file (TXT, Image, PDF). AI generates feedback and score.
+
+**Request:**
+```json
+{
+  "subject": "Science",
+  "text_content": "My homework answer is ...", // optional
+  "file": <file upload>                        // optional
+}
+```
+
+**Response:**
+```json
+{
+  "feedback": "Good explanation, but ...",
+  "score": 84.5,
+  "homework_id": 17
+}
+```
+
+**WebSocket:**  
+`ws://<host>/ws/homework/?token=<access_token>`
+- Only supports text (no file upload via WS).
+
+---
+
+## Quiz Generation & Submission
+
+**Endpoints:**
+
+| Endpoint                             | Method | Description                    |
+|--------------------------------------|--------|--------------------------------|
+| `/api/quiz/generate/`                | POST   | Generate quiz (by subject/topic)|
+| `/api/quiz/<quiz_id>/submit/`        | POST   | Submit quiz answers            |
+
+**Quiz Generation Request:**
+```json
+{
+  "subject": "Mathematics",
+  "topic": "Fractions" // optional
+}
+```
+
+**Quiz Response:**
+```json
+{
+  "quiz_id": 42,
+  "questions": [
+    {
+      "q": "What is 1/2 + 1/4?",
+      "options": ["1/4", "1/2", "3/4", "1"],
+      "correct": "3/4"
+    }
+  ]
+}
+```
+
+**Quiz Submission:**
+```json
+POST /api/quiz/42/submit/
+{
+  "answers": ["3/4", "B", ...]
+}
+→
+{
+  "score": 85,
+  "ai_feedback": "You did well, but review question 2."
+}
+```
+
+**WebSocket:**  
+`ws://<host>/ws/quiz/?token=<access_token>`
+- Supports both generation and submission.
+
+---
+
+## Student Progress & Analytics
+
+**Endpoints:**
+
+| Endpoint                                         | Method | Description                                 |
+|--------------------------------------------------|--------|---------------------------------------------|
+| `/api/progress/`                                 | GET    | Get all progress records for student        |
+| `/api/progress/overview/`                        | GET    | Get summary of progress across subjects     |
+| `/api/progress/subject/<subject>/`               | GET    | Get analytics for a specific subject        |
+| `/api/progress/trend/`                           | GET    | Get improvement trend summary               |
+| `/api/progress/analytics/`                       | GET    | Get analytics for dashboard                 |
+| `/api/progress/analytics/deep/`                  | GET    | Advanced analytics (leaderboard, readiness) |
+
+**Progress Record Example:**
+```json
+{
+  "subject": "Mathematics",
+  "average_score": 87.5,
+  "weak_topics": ["Fractions", "Decimals"],
+  "strong_topics": ["Geometry"],
+  "completion_rate": 80.0,
+  "last_updated": "2024-06-10T12:34:56Z"
+}
+```
+
+---
+
+## AI Recommendations
+
+**Endpoints:**
+
+| Endpoint                   | Method | Description                                        |
+|----------------------------|--------|----------------------------------------------------|
+| `/api/recommendations/ai/` | GET    | Get AI-powered study tips & resource suggestions    |
+| `/api/recommendations/study-plan/` | GET | Get AI-generated weekly study plan                 |
+
+**Response Example:**
+```json
+{
+  "weak_topics": ["Decimals"],
+  "ai_suggestion": "Focus on decimals using visual aids...",
+  "resources": [
+    { "id": 5, "title": "Decimals Explained", "subject": "Mathematics", ... }
+  ]
+}
+```
+
+---
+
+## Reports (Weekly & Parent)
+
+**Endpoints:**
+
+| Endpoint                          | Method | Description                             |
+|-----------------------------------|--------|-----------------------------------------|
+| `/api/reports/weekly/`            | GET    | Get AI-generated weekly student report  |
+| `/api/reports/send-to-parent/`    | POST   | Send AI-generated report to parent email|
+
+**Weekly Report Example:**
+```json
+{
+  "student": "alice",
+  "summary": "Alice improved in Geometry...",
+  "context_used": "Subject: Mathematics, Avg: 85, ..."
+}
+```
+
+**Parent Report Request:**
+```json
+POST /api/reports/send-to-parent/
+{
+  "parent_email": "parent@example.com"
+}
+```
+
+---
+
+## Error Handling & Status Codes
+
+- All endpoints return JSON with appropriate HTTP status codes.
+- Typical error response:
+```json
+{
+  "error": "Subject is required."
+}
+```
+- 400: Bad request (missing/invalid fields)
+- 401: Unauthorized (invalid/missing token)
+- 404: Not found
+- 500: Internal server error
+
+---
+
+## Appendix: Example JSON Structures
+
+### User Profile
+```json
+{
+  "id": 1,
+  "username": "alice",
+  "first_name": "Alice",
+  "last_name": "W.",
+  "email": "alice@example.com",
+  "profile": {
+    "grade": 7,
+    "board": "CBSE"
+  }
+}
+```
+
+### Chat Message
+```json
+{
+  "id": 17,
+  "sender": "user",
+  "content": "What is a fraction?",
+  "created_at": "2024-06-10T12:00:00Z"
+}
+```
+
+### Homework Feedback
+```json
+{
+  "feedback": "Great job! Please expand on question 2.",
+  "score": 92.0
+}
+```
+
+### Quiz Question
+```json
+{
+  "q": "What is 2/3 + 1/3?",
+  "options": ["1/3", "2/3", "1", "0"],
+  "correct": "1"
+}
+```
+
+---
+
+## Notes & Best Practices
+
+- Always send JWT access token in the `Authorization` header for protected endpoints.
+- For file uploads, use `multipart/form-data` and include text fields as form data.
+- WebSocket connections require the `token` query parameter (access token).
+- All dates/times are in ISO8601 format, UTC.
+- Validate all API responses for presence of `error` before using data.
+
+---
+
+**For further clarification or real-time debugging, contact the backend team.**
+AI-Powered Personalized Learning Platform  
+Frontend Integration Guide (FINAL – Submission Ready)
+====================================================
+
+This document defines **all backend APIs, request/response formats, dependencies, and frontend flow** for the project.
+
+⚠️ **Frontend teams must follow the flow exactly to avoid runtime errors.**
+
+All APIs (except Register/Login/Health) require:
+```
+Authorization: Bearer <ACCESS_TOKEN>
+```
+
+---
+
+## 1️⃣ Mandatory User Flow (VERY IMPORTANT)
+
+### Step 1: User Registration
+```
+POST /api/auth/register/
+```
+
+Body:
+```json
+{
+  "username": "student1",
+  "email": "student1@test.com",
+  "password": "test@123",
+  "password2": "test@123",
+  "first_name": "Student",
+  "last_name": "One"
+}
+```
+
+---
+
+### Step 2: Login (JWT)
+```
+POST /api/auth/login/
+```
+
+Response:
+```json
+{
+  "access": "<JWT_ACCESS>",
+  "refresh": "<JWT_REFRESH>",
+  "user": {
+    "id": 5,
+    "username": "student1",
+    "email": "student1@test.com"
+  }
+}
+```
+
+---
+
+### ⚠️ Step 3: Student Profile Setup (MANDATORY)
+Without this, **Notes / Study Plan / Analytics WILL FAIL**
+
+```
+POST /api/auth/profile/setup/
+```
+
+Body:
+```json
+{
+  "grade": 10,
+  "board": "CBSE"
+}
+```
+
+Response:
+```json
+{
+  "message": "Student profile saved successfully",
+  "profile": {
+    "grade": 10,
+    "board": "CBSE"
+  }
+}
+```
+
+---
+
+## 2️⃣ Global Dashboard APIs
+
+### Overall Progress Overview
+```
+GET /api/progress/overview/
+```
+
+Response:
+```json
+{
+  "average_score": 72.5,
+  "completion_rate": 40,
+  "subjects": [
+    {
+      "subject": "Mathematics",
+      "average_score": 70,
+      "completion_rate": 45,
+      "weak_topics": ["Fractions"],
+      "strong_topics": ["Integers"]
+    }
+  ]
+}
+```
+
+---
+
+### Weekly AI Report (Preview)
+```
+GET /api/reports/weekly/
+```
+
+Returns AI-generated analytical summary (text).
+
+---
+
+## 3️⃣ Notes System (3-Level Hierarchy)
+
+### ⚠️ Dependency
+The following **must exist in DB**:
+- Standard (Grade)
+- Subject
+- Topic  
+(Admin seeds these once)
+
+---
+
+### Global Notes (Grade-based)
+```
+GET /api/student_notes/global/
+```
+
+---
+
+### Subject-wise Notes
+```
+GET /api/student_notes/subject/<subject>/
+```
+
+Example:
+```
+/api/student_notes/subject/Mathematics/
+```
+
+---
+
+### Topic-wise Notes
+```
+GET /api/student_notes/topic/<subject>/<topic>/
+```
+
+Example:
+```
+/api/student_notes/topic/Mathematics/Fractions/
+```
+
+---
+
+### AI Note Generation
+```
+POST /api/student_notes/generate/
+```
+
+Body:
+```json
+{
+  "subject": "Mathematics",
+  "topic": "Fractions"
+}
+```
+
+Response:
+```json
+{
+  "message": "AI note generated successfully",
+  "note": {
+    "subject": "Mathematics",
+    "topic": "Fractions",
+    "content": "## Fractions Explained ...",
+    "created_at": "2026-02-03T17:26:05Z"
+  }
+}
+```
+
+---
+
+## 4️⃣ Homework Evaluation
+
+```
+POST /api/homework/submit/
+```
+
+Body (text):
+```json
+{
+  "subject": "Mathematics",
+  "text_content": "A fraction is a part of a whole..."
+}
+```
+
+OR multipart form-data with:
+- subject
+- file (TXT / Image / PDF)
+
+Response:
+```json
+{
+  "message": "Homework submitted and evaluated",
+  "homework_id": 7,
+  "feedback": "Good effort, revise denominators",
+  "score": 78.5
+}
+```
+
+---
+
+## 5️⃣ Quiz Module
+
+### Generate Quiz
+```
+POST /api/quiz/generate/
+```
+
+Body:
+```json
+{
+  "subject": "Mathematics",
+  "topic": "Fractions"
+}
+```
+
+Response:
+```json
+{
+  "quiz_id": 12,
+  "questions": [
+    {
+      "q": "What is 1/2?",
+      "options": ["Whole", "Part", "Decimal", "Ratio"],
+      "correct": "Part"
+    }
+  ]
+}
+```
+
+---
+
+### Submit Quiz
+```
+POST /api/quiz/<quiz_id>/submit/
+```
+
+---
+
+## 6️⃣ AI Recommendations
+
+### Weak-topic Recommendations
+```
+GET /api/recommendations/ai/
+```
+
+Returns:
+- Weak topics
+- AI suggestions
+- Related resources
+
+---
+
+### Weekly Study Plan (IMPORTANT)
+
+```
+GET /api/recommendations/study-plan/
+```
+
+Response:
+```json
+{
+  "student": "student1",
+  "weak_topics": ["Fractions"],
+  "strong_topics": ["Integers"],
+  "study_strategy": {
+    "subject_wise_plan": {...},
+    "daily_plan": [...],
+    "revision_strategy": {...}
+  }
+}
+```
+
+⚠️ Frontend must parse JSON (no markdown expected).
+
+---
+
+## 7️⃣ Resources (RAG Knowledge Base)
+
+```
+POST /api/resources/add/
+```
+
+Body:
+```json
+{
+  "title": "Fractions Basics",
+  "content": "Fractions represent parts...",
+  "subject": "Mathematics",
+  "grade_level": 10
+}
+```
+
+Used by:
+- Chatbot
+- Notes
+- Study Plan
+- Recommendations
+
+---
+
+## 8️⃣ Chatbot
+
+### REST Chat
+```
+POST /api/chatbot/chat/
+```
+
+Body:
+```json
+{
+  "message": "Explain fractions",
+  "session_id": "<optional>"
+}
+```
+
+---
+
+### WebSocket Chat
+```
+WS /ws/chat/?token=<JWT>
+```
+
+---
+
+## 9️⃣ Parent Report
+
+```
+POST /api/reports/send-to-parent/
+```
+
+Body:
+```json
+{
+  "parent_email": "parent@email.com"
+}
+```
+
+---
+
+## 🔟 Health Check
+
+```
+GET /healthz/
+```
+
+Response:
+```json
+{
+  "status": "ok",
+  "message": "Server is running"
+}
+```
+
+---
+
+## ❌ APIs NOT IMPLEMENTED (Do NOT use)
+- /api/auth/logout/
+- /api/auth/token/refresh/
+- /api/progress/analytics/
+- /api/progress/analytics/deep/
+
+---
+
+## ✅ Final Notes
+
+✔ Follow user flow strictly  
+✔ Profile setup is mandatory  
+✔ Notes require curriculum data  
+✔ Study plan is AI-generated JSON  
+✔ All features tested successfully  
+
+---  
+END OF DOCUMENT
+=========================
+Frontend Integration Guide (FINAL)
+=========================
+
+This document provides the **complete and required API integration reference**
+for the AI-powered Student Learning Platform.
+
+⚠️ IMPORTANT:
+This backend has **explicit dependencies** (StudentProfile, Grade/Standard data).
+Frontend MUST follow the documented flow to avoid runtime errors.
+
+All API requests (except Register & Login) require **JWT authentication**.
+
+--------------------------------------------------
+AUTHENTICATION & USER SETUP (CRITICAL)
+--------------------------------------------------
+
+### 1️⃣ Register User
+POST /api/auth/register/
+
+Request:
+{
+  "username": "student1",
+  "email": "student1@test.com",
+  "password": "test@123",
+  "password2": "test@123",
+  "first_name": "Student",
+  "last_name": "One"
+}
+
+---
+
+### 2️⃣ Login User
+POST /api/auth/login/
+
+Request:
+{
+  "username": "student1",
+  "password": "test@123"
+}
+
+Response:
+{
+  "access": "<JWT_ACCESS_TOKEN>",
+  "refresh": "<JWT_REFRESH_TOKEN>",
+  "user": {...}
+}
+
+---
+
+### 3️⃣ Student Profile Setup (MANDATORY)
+⚠️ MUST be called ONCE after login
+
+POST /api/auth/profile/setup/
+Authorization: Bearer <access_token>
+
+Request:
+{
+  "grade": 10,
+  "board": "CBSE"
+}
+
+Why required?
+- Student Notes depend on grade
+- AI context depends on profile
+- Progress tracking requires grade
+- Prevents StudentProfile.DoesNotExist errors
+
+--------------------------------------------------
+STUDENT NOTES MODULE
+--------------------------------------------------
+
+### Generate AI Notes
+POST /api/student_notes/generate/
+Authorization: Bearer <access_token>
+
+Request:
+{
+  "subject": "Mathematics",
+  "topic": "Fractions"
+}
+
+---
+
+### Get All Notes (Admin + AI)
+GET /api/student_notes/global/
+
+---
+
+### Get Notes by Subject
+GET /api/student_notes/subject/<subject>/
+
+Example:
+GET /api/student_notes/subject/Mathematics/
+
+---
+
+### Get Notes by Topic
+GET /api/student_notes/topic/<subject>/<topic>/
+
+Example:
+GET /api/student_notes/topic/Mathematics/Fractions/
+
+Dependencies:
+✔ StudentProfile exists
+✔ Standard(grade) exists
+✔ Subject exists for grade
+✔ Topic exists under subject
+
+--------------------------------------------------
+HOMEWORK MODULE
+--------------------------------------------------
+
+### Submit Homework (Text or File)
+POST /api/homework/submit/
+Authorization: Bearer <access_token>
+
+Request (Text):
+{
+  "subject": "Mathematics",
+  "text_content": "A fraction represents part of a whole."
+}
+
+Request (File):
+Form-data:
+- subject: Mathematics
+- file: homework.pdf / image.jpg / text.txt
+
+Features:
+✔ OCR for images & PDFs
+✔ AI evaluation
+✔ Auto progress update
+
+--------------------------------------------------
+QUIZ MODULE
+--------------------------------------------------
+
+### Generate Quiz
+POST /api/quiz/generate/
+Authorization: Bearer <access_token>
+
+Request:
+{
+  "subject": "Mathematics",
+  "topic": "Fractions"
+}
+
+---
+
+### Submit Quiz
+POST /api/quiz/<quiz_id>/submit/
+Authorization: Bearer <access_token>
+
+--------------------------------------------------
+PROGRESS & ANALYTICS
+--------------------------------------------------
+
+### All Progress Records
+GET /api/progress/
+
+---
+
+### Overall Progress Overview
+GET /api/progress/overview/
+
+---
+
+### Subject-wise Progress
+GET /api/progress/subject/<subject>/
+
+---
+
+### Progress Trend
+GET /api/progress/trend/
+
+---
+
+### Analytics (Dashboard)
+GET /api/progress/analytics/
+GET /api/progress/analytics/deep/
+
+--------------------------------------------------
+RECOMMENDATIONS & STUDY PLAN
+--------------------------------------------------
+
+### AI Recommendations
+GET /api/recommendations/ai/
+
+---
+
+### Weekly Study Plan
+GET /api/recommendations/study-plan/
+
+Uses:
+✔ Weak topics
+✔ Strong topics
+✔ Notes
+✔ AI reasoning
+
+--------------------------------------------------
+REPORTS
+--------------------------------------------------
+
+### Weekly Progress Report (AI)
+GET /api/reports/weekly/
+
+---
+
+### Send Parent Report
+POST /api/reports/send-to-parent/
+Authorization: Bearer <access_token>
+
+Request:
+{
+  "parent_email": "parent@example.com"
+}
+
+--------------------------------------------------
+CHATBOT (REST)
+--------------------------------------------------
+
+POST /api/chatbot/chat/
+Authorization: Bearer <access_token>
+
+Request:
+{
+  "message": "Explain fractions",
+  "session_id": "<optional>"
+}
+
+--------------------------------------------------
+WEBSOCKET APIs (JWT REQUIRED)
+--------------------------------------------------
+
+⚠️ JWT token MUST be passed in query params
+
+### Chatbot WebSocket
+ws://localhost:8000/ws/chat/?token=<access_token>
+
+---
+
+### Homework WebSocket
+ws://localhost:8000/ws/homework/?token=<access_token>
+
+---
+
+### Quiz WebSocket
+ws://localhost:8000/ws/quiz/?token=<access_token>
+
+--------------------------------------------------
+FIRST-TIME SETUP CHECKLIST
+--------------------------------------------------
+
+✔ Run migrations
+✔ Setup .env variables
+✔ Create Standard + Subject + Topic master data
+✔ Register user
+✔ Login user
+✔ Setup Student Profile
+✔ Then access AI features
+
+--------------------------------------------------
+COMMON ERRORS & FIXES
+--------------------------------------------------
+
+❌ StudentProfile.DoesNotExist  
+✔ Call /api/auth/profile/setup/
+
+❌ Standard.DoesNotExist  
+✔ Insert grade data in admin or fixtures
+
+❌ AI score parsing error  
+✔ Backend auto-normalizes (7/10, 70%, etc.)
+
+--------------------------------------------------
+END OF DOCUMENT
+--------------------------------------------------
+
+====================================================
+NEW FRONTEND REQUIREMENTS — FILTER + PROACTIVE DESIGN
+====================================================
+
+The backend now supports FULL FILTER-BASED AI orchestration.
+
+All AI features including:
+- Chatbot
+- Quiz
+- Homework
+- Reports
+- Recommendations
+
+can operate in multiple scopes using filters.
+
+----------------------------------------------------
+FILTER OBJECT STRUCTURE
+----------------------------------------------------
+
+Frontend must send filters using this JSON format:
+
+{
+  "filters": {
+    "grades": [10],
+    "subjects": ["Mathematics"],
+    "topics": ["Fractions"],
+    "doc_types": ["note", "resource"]
+  }
+}
+
+----------------------------------------------------
+FILTER FIELD DESCRIPTION
+----------------------------------------------------
+
+grades:
+List of grade levels.
+
+subjects:
+List of subjects.
+
+topics:
+List of topics.
+
+doc_types:
+Allowed values:
+- note
+- resource
+
+
+----------------------------------------------------
+CHATBOT UPDATED IMPLEMENTATION
+----------------------------------------------------
+
+POST /api/chatbot/chat/
+
+Request JSON:
+
+{
+  "message": "Explain Fractions",
+  "session_id": "optional_uuid",
+  "filters": {
+    "subjects": ["Mathematics"],
+    "topics": ["Fractions"]
+  }
+}
+
+If filters are missing:
+System automatically uses global scope.
+
+
+----------------------------------------------------
+QUIZ GENERATION IMPLEMENTATION
+----------------------------------------------------
+
+POST /api/quiz/generate/
+
+Request JSON:
+
+{
+  "subject": "Mathematics",
+  "topic": "Fractions"
+}
+
+Backend automatically converts to filter-based query.
+
+
+----------------------------------------------------
+HOMEWORK SUBMISSION
+----------------------------------------------------
+
+POST /api/homework/submit/
+
+TEXT MODE:
+
+{
+  "subject": "Mathematics",
+  "text_content": "Answer text"
+}
+
+FILE MODE:
+Multipart form data
+
+Fields:
+subject
+file
+
+
+----------------------------------------------------
+PROFILE SETUP (MANDATORY)
+----------------------------------------------------
+
+POST /api/auth/profile/setup/
+
+{
+  "grade": 10,
+  "board": "CBSE"
+}
+
+IMPORTANT:
+Frontend MUST call this after signup.
+
+
+----------------------------------------------------
+FRONTEND FILTER UI REQUIREMENTS
+----------------------------------------------------
+
+Frontend must support:
+
+• Global mode toggle
+• Subject dropdown
+• Topic multi select
+• Multi subject selection
+• Grade auto detection from profile
+
+
+----------------------------------------------------
+WEBSOCKET CHAT FILTER SUPPORT
+----------------------------------------------------
+
+WS Endpoint:
+/ws/chat/
+
+Payload:
+
+{
+  "message": "Explain Fractions",
+  "filters": {
+    "subjects": ["Mathematics"],
+    "topics": ["Fractions"]
+  }
+}
+
+
+----------------------------------------------------
+PROACTIVE LEARNING FLOW
+----------------------------------------------------
+
+Frontend MUST:
+
+1. Call:
+   GET /api/progress/learning-path/
+
+2. Show topic locking system
+3. Highlight next available topic
+4. Suggest revision topics
+
+
+----------------------------------------------------
+ERROR HANDLING EXPECTATIONS
+----------------------------------------------------
+
+400 → Missing input
+401 → Authentication expired
+404 → Invalid data
+500 → AI error
+
+
+----------------------------------------------------
+RECOMMENDED USER FLOW
+----------------------------------------------------
+
+1. User Login
+2. Profile Setup
+3. Fetch Learning Path
+4. Enable Filters
+5. Use AI features with filters
+=========================
+Frontend Integration Guide (FINAL – Updated)
+=========================
+
+This document contains COMPLETE and UPDATED integration details for the AI Personalized Learning Platform.
+It reflects ALL currently implemented backend features including:
+
+• Authentication & Student Profile Setup
+• Filter‑Based AI Interaction
+• Chatbot (REST + WebSocket + TTS)
+• Proactive Quiz System
+• Homework Evaluation
+• Progress & Topic Mastery Tracking
+• Recommendations & Study Plans
+• Reports & Parent Communication
+• Resource & RAG Knowledge System
+• Notes System
+
+All endpoints (except register/login) require JWT Authorization:
+
+Authorization: Bearer <access_token>
+
+--------------------------------------------------
+1. AUTHENTICATION MODULE
+--------------------------------------------------
+
+Register User
+POST /api/auth/register/
+
+Request:
+{
+  "username": "student1",
+  "password": "test@123",
+  "password2": "test@123",
+  "email": "student1@test.com",
+  "first_name": "Student",
+  "last_name": "One"
+}
+
+--------------------------------------------------
+
+Login
+POST /api/auth/login/
+
+Request:
+{
+  "username": "student1",
+  "password": "test@123"
+}
+
+--------------------------------------------------
+
+Get Profile
+GET /api/auth/profile/
+
+--------------------------------------------------
+
+Student Profile Setup (MANDATORY AFTER LOGIN)
+POST /api/auth/profile/setup/
+
+Request:
+{
+  "grade": 10,
+  "board": "CBSE"
+}
+
+This automatically:
+• Initializes learning path
+• Unlocks first topic
+• Creates StudentTopicProgress records
+
+--------------------------------------------------
+2. FILTER ENGINE (CORE SYSTEM FEATURE)
+--------------------------------------------------
+
+Filters allow frontend to control AI scope.
+
+Supported Filter JSON:
+
+{
+  "grade": 10,
+  "subjects": ["Mathematics","Science"],
+  "topics": ["Fractions","Algebra"]
+}
+
+Frontend UI must allow:
+
+• Global learning
+• Single subject
+• Multiple subjects
+• Single topic
+• Multiple topics
+• Cross‑subject topic learning
+
+If filters are empty → Global AI context is used.
+
+--------------------------------------------------
+3. CHATBOT MODULE
+--------------------------------------------------
+
+REST Chat
+POST /api/chatbot/chat/
+
+Request:
+{
+  "message": "Explain fractions",
+  "filters": {
+    "subjects": ["Mathematics"],
+    "topics": ["Fractions"]
+  }
+}
+
+Response:
+{
+  "answer": "AI response",
+  "session_id": "uuid"
+}
+
+--------------------------------------------------
+
+WebSocket Chat
+WS /ws/chat/?token=<jwt>
+
+Payload:
+{
+  "message": "Explain algebra",
+  "filters": {...},
+  "tts": true
+}
+
+Returns streaming response + optional voice audio.
+
+--------------------------------------------------
+4. NOTES MODULE
+--------------------------------------------------
+
+Generate AI Notes
+POST /api/student_notes/generate/
+
+Request:
+{
+  "subject": "Mathematics",
+  "topic": "Fractions"
+}
+
+--------------------------------------------------
+
+Get Global Notes
+GET /api/student_notes/global/
+
+--------------------------------------------------
+
+Get Subject Notes
+GET /api/student_notes/subject/<subject>/
+
+--------------------------------------------------
+
+Get Topic Notes
+GET /api/student_notes/topic/<subject>/<topic>/
+
+--------------------------------------------------
+5. QUIZ MODULE
+--------------------------------------------------
+
+Generate Quiz
+POST /api/quiz/generate/
+
+Request:
+{
+  "subject": "Mathematics",
+  "topic": "Fractions"
+}
+
+Supports filter‑based quiz generation internally.
+
+--------------------------------------------------
+
+Submit Quiz
+POST /api/quiz/<quiz_id>/submit/
+
+Request:
+{
+  "answers": ["A","B","C"]
+}
+
+This updates:
+• Progress
+• Topic mastery
+• Weak/Strong topics
+
+--------------------------------------------------
+
+Quiz WebSocket
+WS /ws/quiz/?token=<jwt>
+
+--------------------------------------------------
+6. HOMEWORK MODULE
+--------------------------------------------------
+
+Submit Homework
+POST /api/homework/submit/
+
+Supports:
+• Text
+• Image
+• PDF (OCR)
+
+Request:
+Form‑Data:
+subject: Mathematics
+text_content: Homework text
+file: (optional upload)
+
+Response includes:
+• AI feedback
+• Score
+• Progress update
+
+--------------------------------------------------
+
+Homework WebSocket
+WS /ws/homework/?token=<jwt>
+
+--------------------------------------------------
+7. PROGRESS MODULE
+--------------------------------------------------
+
+Get All Progress
+GET /api/progress/
+
+--------------------------------------------------
+
+Progress Overview
+GET /api/progress/overview/
+
+--------------------------------------------------
+
+Subject Analytics
+GET /api/progress/subject/<subject>/
+
+--------------------------------------------------
+
+Progress Trend
+GET /api/progress/trend/
+
+--------------------------------------------------
+
+Learning Path
+GET /api/progress/learning-path/
+
+Returns unlocked topics & mastery states.
+
+--------------------------------------------------
+8. RECOMMENDATION MODULE
+--------------------------------------------------
+
+AI Recommendations
+GET /api/recommendations/ai/
+
+Returns:
+• Weak topics
+• Suggested resources
+• AI study suggestions
+
+--------------------------------------------------
+
+Weekly Study Strategy
+GET /api/recommendations/study-plan/
+
+Returns detailed daily and weekly plan.
+
+--------------------------------------------------
+9. REPORT MODULE
+--------------------------------------------------
+
+Weekly Report
+GET /api/reports/weekly/
+
+--------------------------------------------------
+
+Send Parent Report
+POST /api/reports/send-to-parent/
+
+Request:
+{
+  "parent_email": "parent@email.com"
+}
+
+--------------------------------------------------
+10. RESOURCE / KNOWLEDGE BASE MODULE
+--------------------------------------------------
+
+Add Resource
+POST /api/resources/add/
+
+Request:
+Form‑Data:
+
+• title
+• content
+• subject
+• grade_level
+• file (optional)
+
+Automatically:
+• OCR text extraction
+• Embedding generation
+• Vector indexing
+
+--------------------------------------------------
+11. PROACTIVE LEARNING FEATURES (AUTO BACKEND BEHAVIOR)
+--------------------------------------------------
+
+The system automatically:
+
+• Unlocks next topic
+• Tracks mastery score
+• Detects weak topics
+• Generates revision reminders
+• Uses progress in AI prompts
+• Uses RAG knowledge filtering
+
+--------------------------------------------------
+12. GOOGLE DRIVE SYLLABUS SYNC (ADMIN / SYSTEM FEATURE)
+--------------------------------------------------
+
+Auto imports:
+
+Grade → Subject → Topic → Files
+
+Files automatically become resources and are indexed.
+
+--------------------------------------------------
+13. FRONTEND UI REQUIREMENTS
+--------------------------------------------------
+
+Frontend should implement:
+
+Dashboard
+• Progress overview
+• Weekly report preview
+
+Chatbot Screen
+• Message input
+• Filter selector
+• Voice toggle
+
+Notes Section
+• Global / Subject / Topic tabs
+
+Quiz Section
+• Topic / Filter selection
+• Real‑time quiz
+
+Homework Section
+• Text submission
+• File upload
+
+Progress Section
+• Subject analytics
+• Learning path view
+
+Recommendations
+• Study strategy display
+
+--------------------------------------------------
+END OF FINAL INTEGRATION DOCUMENT
+--------------------------------------------------

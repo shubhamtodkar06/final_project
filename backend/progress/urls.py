@@ -1,6 +1,7 @@
 # backend/progress/urls.py
 from django.urls import path
 from .views import ProgressListView, ProgressUpdateView, ProgressOverviewView
+from .views import LearningPathView
 
 urlpatterns = [
     path("", ProgressListView.as_view(), name="progress-list"),
@@ -26,4 +27,5 @@ from .views import ProgressDeepInsightsView
 
 urlpatterns += [
     path("analytics/deep/", ProgressDeepInsightsView.as_view(), name="progress-analytics-deep"),
+    path("learning-path/", LearningPathView.as_view()),
 ]

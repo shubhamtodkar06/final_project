@@ -47,7 +47,13 @@ class QuizConsumer(AsyncJsonWebsocketConsumer):
         await self.send_json({"type": "status", "value": "generating"})
         try:
             ai_output = await sync_to_async(ai_generate)(
-                getattr(self.user, "id", None), topic, mode="quiz", subject=subject
+                getattr(self.user, "id", None),
+                topic,
+                mode="quiz",
+                filters={
+                    "subjects": [subject] if subject else [],
+                    "topics": [topic] if topic else []
+                }
             )
             clean_output = re.sub(r"^```json|```$", "", (ai_output or "").strip(), flags=re.MULTILINE).strip()
             try:

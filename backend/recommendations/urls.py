@@ -1,8 +1,7 @@
-#backend/recommendations/urls.py
 from django.urls import path
-from .views import AIRecommendationsView
+from .views import AIRecommendationsView, AIWeeklyStudyStrategyView
 
 urlpatterns = [
     path("ai/", AIRecommendationsView.as_view(), name="ai_recommendations"),
-    path("personal/", AIRecommendationsView.as_view(), name="personal_recommendations"),  # placeholder for personalized endpoint
+    path("study-plan/", AIWeeklyStudyStrategyView.as_view(), name="weekly_study_plan"),
 ]
