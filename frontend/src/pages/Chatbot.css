@@ -1,0 +1,270 @@
+/*
+ * Chatbot.css
+ * This file styles the chatbot layout, re-using style.css
+ */
+
+.chatbot-page {
+  display: flex;
+  height: 100vh;
+  width: 100%;
+  background: #e0e5ec;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* --- Left Sidebar --- */
+.chat-history-sidebar {
+  flex: 0 0 300px;
+  background: #e0e5ec;
+  padding: 25px;
+  border-right: 2px solid #bec3cf;
+  box-shadow: 10px 0 30px #bec3cf;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.chat-history-sidebar h2 {
+  color: #3d4468;
+  font-weight: 600;
+  text-align: center;
+  text-shadow: 1px 1px 2px #ffffff, -1px -1px 2px #bec3cf;
+}
+
+.back-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 14px;
+  padding: 12px;
+  margin-bottom: 10px;
+  /* Re-uses neu-button styles from style.css */
+}
+
+.history-list {
+  overflow-y: auto;
+  flex-grow: 1;
+}
+
+.history-item {
+  background: #e0e5ec;
+  box-shadow: 6px 6px 15px #bec3cf, -6px -6px 15px #ffffff;
+  border-radius: 10px;
+  padding: 15px;
+  margin-bottom: 15px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.history-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 8px 8px 20px #bec3cf, -8px -8px 20px #ffffff;
+}
+
+/* --- NEW: Style for the active session --- */
+.history-item.active {
+  box-shadow: inset 4px 4px 10px #bec3cf, inset -4px -4px 10px #ffffff;
+  transform: translateY(0);
+}
+
+.history-question {
+  color: #6c7293;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* --- NEW: Style for the session date --- */
+.history-item small {
+  font-size: 12px;
+  color: #9499b7;
+  margin-top: 5px;
+  display: block;
+}
+
+.no-history {
+  color: #9499b7;
+  text-align: center;
+  font-style: italic;
+}
+
+/* --- Right Chat Window --- */
+.chat-window {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* Important */
+}
+
+.chat-messages {
+  flex: 1;
+  padding: 30px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.message {
+  display: flex;
+  max-width: 70%;
+}
+
+.message-bubble {
+  padding: 15px 20px;
+  border-radius: 20px;
+  color: #3d4468;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+/* User Message */
+.message.user {
+  align-self: flex-end;
+}
+.message.user .message-bubble {
+  background: #e0e5ec;
+  box-shadow: 8px 8px 20px #bec3cf, -8px -8px 20px #ffffff;
+  border-top-right-radius: 5px;
+}
+
+/* Bot Message */
+.message.bot {
+  align-self: flex-start;
+}
+.message.bot .message-bubble {
+  background: #e0e5ec;
+  /* Inset "depressed" style */
+  box-shadow: inset 8px 8px 16px #bec3cf, inset -8px -8px 16px #ffffff;
+  border-top-left-radius: 5px;
+}
+
+/* --- NEW: Typing Indicator Styles --- */
+.typing-indicator span {
+  height: 10px;
+  width: 10px;
+  background-color: #9499b7;
+  border-radius: 50%;
+  display: inline-block;
+  margin: 0 2px;
+  animation: bounce 1.3s infinite;
+}
+.typing-indicator span:nth-of-type(2) {
+  animation-delay: 0.15s;
+}
+.typing-indicator span:nth-of-type(3) {
+  animation-delay: 0.3s;
+}
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+/* --- NEW: Play Audio Button --- */
+.play-audio-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 8px 12px;
+  margin-top: 15px;
+  width: 100%;
+  background: #00c896;
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  /* Re-uses neu-button styles from style.css */
+}
+.play-audio-btn:hover {
+  background: #00a87f;
+}
+
+
+/* --- Input Area --- */
+.chat-input-area {
+  padding: 25px 30px;
+  border-top: 2px solid #bec3cf;
+  box-shadow: 0 -10px 30px #bec3cf;
+}
+
+.neu-input-bar {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background: #e0e5ec;
+  border-radius: 20px;
+  padding: 10px;
+  /* Re-use your inset shadow style */
+  box-shadow: inset 8px 8px 16px #bec3cf, inset -8px -8px 16px #ffffff;
+}
+
+.neu-input-bar input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 16px;
+  color: #3d4468;
+  font-weight: 500;
+  padding: 10px;
+}
+.neu-input-bar input::placeholder {
+  color: #9499b7;
+}
+
+.neu-input-bar .neu-icon {
+  width: 45px;
+  height: 45px;
+  background: #e0e5ec;
+  border: none;
+  border-radius: 15px;
+  color: #6c7293;
+  cursor: pointer;
+  /* Re-use your icon shadow style */
+  box-shadow: 6px 6px 15px #bec3cf, -6px -6px 15px #ffffff;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+.neu-input-bar .neu-icon:active {
+  box-shadow: inset 3px 3px 8px #bec3cf, inset -3px -3px 8px #ffffff;
+}
+
+.send-button {
+  color: #00c896; /* Make send green */
+}
+
+.mic-button.listening {
+  color: #ff3b5c; /* Make mic red when listening */
+  box-shadow: inset 3px 3px 8px #bec3cf, inset -3px -3px 8px #ffffff;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .chat-history-sidebar {
+    /* On mobile, hide the history bar */
+    display: none;
+  }
+
+  /* --- NEW: Show back button on mobile --- */
+  .back-button {
+    display: flex !important; 
+    width: auto;
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 20;
+    padding: 10px 15px;
+  }
+  
+  .chat-window {
+    /* Add padding to make space for the back button */
+    padding-top: 75px; 
+  }
+}

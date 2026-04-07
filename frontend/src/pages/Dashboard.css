@@ -1,0 +1,375 @@
+/*
+ * NEW Dashboard.css
+ * This file styles the 2-column dashboard layout.
+ * It still re-uses all your styles from style.css (like .neu-icon)
+ */
+
+/* Main Dashboard Container */
+.dashboard-container {
+  background: #e0e5ec;
+  min-height: 100vh;
+  padding: 25px;
+  /* Add overflow-x: hidden to prevent horizontal scroll */
+  overflow-x: hidden;
+}
+
+/* === 1. NEW HEADER === */
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.dashboard-title {
+  color: #3d4468;
+  font-size: 2.5rem;
+  font-weight: 700;
+  /* "Outstanding" effect - subtle shadow */
+  text-shadow: 2px 2px 5px #bec3cf, -2px -2px 5px #ffffff;
+}
+
+.header-icon-group {
+  display: flex;
+  align-items: center;
+  gap: 15px; /* Space between icons */
+}
+
+.header-icon {
+  width: 50px;
+  height: 50px;
+  background: #e0e5ec;
+  border: none;
+  border-radius: 50%;
+  color: #6c7293;
+  cursor: pointer;
+  /* Re-using neu-icon shadow from style.css */
+  box-shadow: 8px 8px 20px #bec3cf, -8px -8px 20px #ffffff;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+}
+
+.header-icon:active {
+  box-shadow: inset 4px 4px 10px #bec3cf, inset -4px -4px 10px #ffffff;
+}
+
+/* Profile Dropdown (Same as before) */
+.profile-menu {
+  position: relative;
+}
+.profile-dropdown {
+  position: absolute;
+  top: 70px;
+  right: 0;
+  z-index: 100;
+  width: 250px;
+  padding: 30px 25px;
+  border-radius: 20px;
+}
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #3d4468;
+  margin-bottom: 20px;
+}
+.logout-button {
+  width: 100%;
+  padding: 12px;
+  background: transparent;
+  border: none;
+  color: #ff3b5c;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 10px;
+  transition: all 0.3s ease;
+}
+.logout-button:hover {
+  background: #ff3b5c;
+  color: #ffffff;
+}
+
+
+/* === 2. NEW 2-COLUMN BODY === */
+.dashboard-body {
+  display: flex;
+  gap: 30px;
+}
+
+/* Main content column (left) */
+.dashboard-main-content {
+  flex: 2; /* Takes up 2/3 of the space */
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+/* Sidebar column (right) */
+.dashboard-sidebar {
+  flex: 1; /* Takes up 1/3 of the space */
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+/* General Card Style (Re-uses your .login-card shadow) */
+/* Find this rule */
+.dashboard-card {
+  background: #e0e5ec;
+  border-radius: 30px;
+  padding: 30px;
+  box-shadow: 20px 20px 60px #bec3cf, -20px -20px 60px #ffffff;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  
+  /* --- ADD THIS LINE --- */
+  border: 3px solid transparent;
+}
+/* Replace your old .dashboard-card:hover with this */
+/* Replace your old .dashboard-card:hover with this */
+.dashboard-card:hover {
+  transform: translateY(-5px);
+  /* The color rules are now handled by the specific cards below */
+}
+.dashboard-card h2 {
+  color: #3d4468;
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 20px 0 10px 0;
+}
+.dashboard-card p {
+  color: #80849b;
+  font-size: 15px;
+  font-weight: 400;
+  margin-bottom: 20px;
+  flex-grow: 1; /* Helps align buttons at the bottom */
+}
+.dashboard-card .neu-button {
+  width: 80%; /* Button doesn't have to be full-width */
+  margin-bottom: 0; /* Remove extra margin from button */
+}
+
+/* Chatbot Card */
+.card-chatbot {
+  cursor: pointer;
+}
+
+/* Courses Card */
+.card-courses .neu-input {
+  width: 100%;
+}
+.card-courses select {
+  width: 100%;
+  background: transparent;
+  border: none;
+  padding: 18px 20px 18px 50px; /* Match your login input padding */
+  color: #3d4468;
+  font-size: 16px;
+  font-weight: 500;
+  outline: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  cursor: pointer;
+}
+.card-courses .input-icon {
+  /* This class is from your style.css */
+  z-index: 0;
+}
+.subject-list {
+  list-style: none;
+  padding: 0;
+  width: 100%;
+  margin-top: 15px;
+}
+.subject-list li {
+  background: #e0e5ec;
+  box-shadow: 4px 4px 10px #bec3cf, -4px -4px 10px #ffffff;
+  padding: 10px 15px;
+  border-radius: 10px;
+  margin-bottom: 10px;
+  color: #6c7293;
+  font-weight: 500;
+}
+
+/* Bottom Row Quiz/Homework */
+.bottom-card-row {
+  display: flex;
+  gap: 30px;
+}
+.card-quiz, .card-homework {
+  flex: 1; /* Make them share the space equally */
+}
+
+/* Sidebar Cards */
+.card-syllabus {
+  /* This will be as tall as its content */
+}
+.chart-placeholder {
+  width: 100%;
+  height: auto; /* Allow box to fit image */
+  padding: 15px; /* Add space around image */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 20px;
+  background: #e0e5ec;
+  box-shadow: inset 8px 8px 16px #bec3cf, inset -8px -8px 16px #ffffff;
+  margin-bottom: 10px;
+}
+.chart-subtext {
+  font-size: 12px;
+  margin-bottom: 0;
+  color: #9499b7;
+}
+
+/* Elongated Quote Card */
+.card-quote {
+  /* "Floating" look comes from the .dashboard-card shadow */
+  /* "Squared Elongated" is handled by being in the sidebar */
+  background: #e0e5ec;
+  /* Inset "depressed" style */
+  box-shadow: inset 8px 8px 16px #bec3cf, inset -8px -8px 16px #ffffff;
+}
+.card-quote .quote-icon {
+  font-size: 24px;
+  color: #9499b7;
+  margin-bottom: 15px;
+}
+.card-quote .quote-text {
+  font-size: 16px;
+  font-style: italic;
+  color: #6c7293;
+  margin-bottom: 15px;
+  flex-grow: 0; /* Don't let this grow */
+}
+.card-quote .quote-author {
+  font-size: 14px;
+  font-weight: 600;
+  color: #3d4468;
+}
+
+/* === 3. RESPONSIVE (MOBILE) === */
+@media (max-width: 900px) {
+  /* Stack the main content and sidebar vertically */
+  .dashboard-body {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 600px) {
+  .dashboard-container {
+    padding: 15px;
+  }
+  .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+  .header-icon-group {
+    /* Move icons to the left on mobile */
+    align-self: flex-start;
+  }
+  .dashboard-title {
+    font-size: 2rem;
+  }
+  .profile-dropdown {
+    /* Reposition on mobile */
+    top: 70px;
+    left: 0;
+    width: 100%;
+  }
+  .bottom-card-row {
+    flex-direction: column; /* Stack quiz/homework */
+  }
+}
+
+/* === 4. STYLES FOR PIE CHART IMAGE === */
+.syllabus-pie-chart {
+  width: 100%;
+  max-width: 230px; /* Keeps the image from getting too big */
+  height: auto;
+  object-fit: contain;
+  border-radius: 10px; /* Optional: gives it soft edges */
+}
+/* --- NEW: Individual Card Hover Glows --- */
+
+/* 1. Chatbot (Cyan) */
+.card-chatbot:hover {
+  border-color: rgba(0, 191, 255, 0.5); /* DeepSkyBlue outline */
+  box-shadow: 
+    20px 20px 60px #bec3cf,
+    -20px -20px 60px #ffffff,
+    0 0 30px 10px rgba(0, 191, 255, 0.6); /* Cyan glow */
+}
+
+/* 2. Courses (Purple) */
+.card-courses:hover {
+  border-color: rgba(138, 43, 226, 0.5); /* BlueViolet outline */
+  box-shadow: 
+    20px 20px 60px #bec3cf,
+    -20px -20px 60px #ffffff,
+    0 0 30px 10px rgba(138, 43, 226, 0.6); /* Purple glow */
+}
+
+/* 3. Quiz (Orange) */
+.card-quiz:hover {
+  border-color: rgba(255, 165, 0, 0.5); /* Orange outline */
+  box-shadow: 
+    20px 20px 60px #bec3cf,
+    -20px -20px 60px #ffffff,
+    0 0 30px 10px rgba(255, 165, 0, 0.6); /* Orange glow */
+}
+
+/* 4. Homework (Green) */
+.card-homework:hover {
+  border-color: rgba(50, 205, 50, 0.5); /* LimeGreen outline */
+  box-shadow: 
+    20px 20px 60px #bec3cf,
+    -20px -20px 60px #ffffff,
+    0 0 30px 10px rgba(50, 205, 50, 0.6); /* Green glow */
+}
+
+/* 5. Syllabus (Red) */
+.card-syllabus:hover {
+  border-color: rgba(255, 69, 0, 0.5); /* OrangeRed outline */
+  box-shadow: 
+    20px 20px 60px #bec3cf,
+    -20px -20px 60px #ffffff,
+    0 0 30px 10px rgba(255, 69, 0, 0.6); /* Red glow */
+}
+
+/* 6. Quote (Gold) */
+.card-quote:hover {
+  border-color: rgba(255, 215, 0, 0.5); /* Gold outline */
+  box-shadow: 
+    20px 20px 60px #bec3cf,
+    -20px -20px 60px #ffffff,
+    0 0 30px 10px rgba(255, 215, 0, 0.6); /* Gold glow */
+}
+/* --- NEW: Individual Card Hover Glows --- */
+
+/* ... (All your other glow rules are here) ... */
+
+/* 7. Notes (Pink) */
+.card-notes:hover {
+  border-color: rgba(255, 105, 180, 0.5); /* HotPink outline */
+  box-shadow: 
+    20px 20px 60px #bec3cf,
+    -20px -20px 60px #ffffff,
+    0 0 30px 10px rgba(255, 105, 180, 0.6); /* Pink glow */
+}
