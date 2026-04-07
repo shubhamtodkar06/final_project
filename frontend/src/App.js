@@ -1,28 +1,24 @@
-import { BrowserRouter, Switch, Route, Link } from "react-router-dom";
-import Register from "./Register";
-import Login from "./Login";
+// src/App.jsx
+import Welcome from "./pages/Welcome";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import Chat from "./pages/Chat";
+import Homework from "./pages/Homework";
+import Quiz from "./pages/Quiz";
+import Progress from "./pages/Progress";
+import Planner from "./pages/Planner";
+import Notes from "./pages/Notes";
+import Reports from "./pages/Reports";
 
-export default function App() {
-  return (
-    <BrowserRouter>
-      <Switch>
-
-        <Route exact path="/">
-          <div className="container">
-            <h1 className="title">AI Tutor</h1>
-            <h2 className="quote">“Study like you're going to live forever.”</h2>
-
-            <div className="btn-box">
-              <Link to="/register"><button className="btn">Register</button></Link>
-              <Link to="/login"><button className="btn">Login</button></Link>
-            </div>
-          </div>
-        </Route>
-
-        <Route path="/register" component={Register} />
-        <Route path="/login" component={Login} />
-
-      </Switch>
-    </BrowserRouter>
-  );
-}
+<Routes>
+    <Route path="/" element={<Welcome />} />
+    <Route path="/login" element={<Login />} />
+    <Route path="/register" element={<Register />} />
+    <Route path="/chat" element={<Chat />} />
+    <Route path="/homework" element={<Homework />} />
+    <Route path="/quiz" element={<Quiz />} />
+    <Route path="/progress" element={<Progress />} />
+    <Route path="/planner" element={<Planner />} />
+    <Route path="/notes" element={<Notes />} />
+    <Route path="/reports" element={<Reports />} />
+</Routes>
